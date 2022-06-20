@@ -1,0 +1,41 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+dependencies {
+    implementation 'org.slf4j:slf4j-simple:1.7.30'
+
+    // Apache DS core API
+    implementation 'org.apache.directory.api:api-all:2.1.0'
+
+    // Jackson YAML processor
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.13.2'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2'
+
+    // Database JDBC drivers implementations
+    implementation 'org.mariadb.jdbc:mariadb-java-client:3.0.4'
+    implementation 'com.oracle.database.jdbc:ojdbc8-production:19.7.0.0'
+
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
+}
+
+application {
+    // Define the main class for the application.
+    mainClass = 'org.alefzero.padl.App'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        showStandardStreams = true
+    }
+}

@@ -3,6 +3,19 @@
 
 Makes easier to reach through gap between LDAP and external input datasources.
 
+# Building with docker
+
+```bash
+
+# Build
+docker build -t padlbase padlbase
+docker build -t padl .
+
+# Run (example)
+docker run -it --rm -p 10389:389 --name padl padl
+
+```
+
 
 # Overview
 
