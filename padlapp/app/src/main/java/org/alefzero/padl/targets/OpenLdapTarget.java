@@ -5,4 +5,11 @@ package org.alefzero.padl.targets;
  */
 public class OpenLdapTarget implements PadlTarget {
 
+    private static final String ID = "openldap";
+
+    @Override
+    public String getId() {
+        return ID;
+    }
+
 }

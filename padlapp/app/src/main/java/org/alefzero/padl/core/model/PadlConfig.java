@@ -53,10 +53,7 @@ public class PadlConfig {
         return type;
     }
     public void setType(String type) {
-        this.type = type;
+        this.type = type == null ? "" : type.toLowerCase();
     }
-
-
-    
 
 }

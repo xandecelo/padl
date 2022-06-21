@@ -5,4 +5,8 @@ package org.alefzero.padl.targets;
  */
 public class OpenLdapTargetFactory implements PadlTargetFactory {
 
+    @Override
+    public PadlTarget getInstance() {
+        return new OpenLdapTarget();
+    }
 }

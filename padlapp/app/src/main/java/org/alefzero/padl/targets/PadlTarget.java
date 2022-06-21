@@ -5,4 +5,6 @@ package org.alefzero.padl.targets;
  */
 public interface PadlTarget {
 
+    String getId();
+
 }

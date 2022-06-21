@@ -1,8 +1,10 @@
 package org.alefzero.padl;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 
 import org.alefzero.padl.core.ConfiguratorHelper;
+import org.alefzero.padl.core.PadlProcess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +17,7 @@ import org.slf4j.LoggerFactory;
  */
 public class App {
 
-    private static Logger logger = LoggerFactory.getLogger(App.class);
+    final static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static void help() {
         logger.info("Usage: ");
@@ -56,6 +58,12 @@ public class App {
 
     private void process(String filename) {
         logger.info("Start processing");
+        try {
+            PadlProcess process = new PadlProcess(new ConfiguratorHelper().withFile(filename).getConfig());
+            process.run();
+        } catch (IOException e) {
+            logger.error("Error processing file [{}]: {}", filename, e.getLocalizedMessage());
+        }
     }
 
     private void config(String filename) {

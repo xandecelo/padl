@@ -41,6 +41,10 @@ public class ConfiguratorHelper {
         return this;
     }
 
+    public PadlConfig getConfig() {
+        return config;
+    }
+
     public String outputEnv() {
         StringBuffer sb = new StringBuffer();
         sb.append("PADLBRIDGE_ROOT_CONFIG_PASSWORD=").append(config.getRootConfigPassword()).append("\n");
