@@ -17,8 +17,8 @@ dependencies {
     implementation 'org.apache.directory.api:api-all:2.1.0'
 
     // Jackson YAML processor
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.13.2'
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.13.3'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3'
 
     // Database JDBC drivers implementations
     implementation 'org.mariadb.jdbc:mariadb-java-client:3.0.4'
