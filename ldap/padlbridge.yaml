@@ -1,7 +1,7 @@
 host: 192.168.0.10
 port: 10389
-rootDN: dc=energia,dc=org,dc=br
+rootDN: dc=alefzero,dc=org
 rootConfigPassword: user1234
-adminPassword: user123
+adminPassword: user1234
 useTLS: false
 type: openldap
