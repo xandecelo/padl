@@ -4,14 +4,18 @@ import java.lang.invoke.MethodHandles;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.alefzero.padl.core.exceptions.PadlException;
 import org.alefzero.padl.core.model.LDAPSourceConfig;
 import org.alefzero.padl.core.model.PadlSourceConfig;
 import org.alefzero.padl.core.services.PadlSource;
 import org.alefzero.padl.core.services.PadlTarget;
 import org.alefzero.padl.utils.LdapUtils;
+import org.apache.directory.api.ldap.model.cursor.EntryCursor;
 import org.apache.directory.api.ldap.model.entry.DefaultEntry;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.message.SearchScope;
+import org.apache.directory.api.ldap.model.name.Dn;
 import org.apache.directory.api.ldap.model.schema.SchemaObjectWrapper;
 import org.apache.directory.api.ldap.model.schema.registries.Schema;
 import org.apache.directory.api.ldap.model.schema.registries.SchemaLoader;
@@ -73,7 +77,8 @@ public class LdapSource extends PadlSource {
                             default:
                                 elem = "'" + sourceSOW.get().getObjectType().name() + "'";
                         }
-                        logger.trace("Configuration to be added to the target: [{}, {}]", elem, sourceSOW.get().getSpecification());
+                        logger.trace("Configuration to be added to the target: [{}, {}]", elem,
+                                sourceSOW.get().getSpecification());
                         entry.add(elem, sourceSOW.get().getSpecification());
                     }
                 }
@@ -112,4 +117,26 @@ public class LdapSource extends PadlSource {
         return config;
     }
 
+    @Override
+    protected void loadToTarget() throws PadlException {
+        try (LdapNetworkConnection sourceConn = LdapUtils.getConnection(config.getHost(), config.getPort(),
+                config.getUseTLS(),
+                config.getBindCN(), config.getBindPassword())) {
+            Dn dn = new Dn(getConfig().getDn());
+            // IMP: filter can be parametrized in YAML
+            String filter = "(objectClass=*)";
+            String[] searchAttributes = new String[0];
+            EntryCursor entryCursor = sourceConn.search(dn, filter, SearchScope.SUBTREE, searchAttributes);
+            // IMP: change dn target mapping
+            for (Entry entry : entryCursor) {
+                // Prevents adding the searched DN
+                if (getConfig().getDn().equalsIgnoreCase(entry.getDn().getName()))
+                    continue;
+                getTarget().addEntry(entry);
+            }
+        } catch (LdapException e) {
+            logger.error("Error processing ldap source:", e);
+            throw new PadlException(e);
+        }
+    }
 }

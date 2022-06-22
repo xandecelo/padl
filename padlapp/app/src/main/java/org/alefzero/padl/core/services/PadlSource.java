@@ -72,15 +72,12 @@ public abstract class PadlSource {
      * @throws PadlException
      */
     protected void configureTarget() throws PadlException {
-
         getTarget().addConfiguration(getConfigurationEntries());
     }
 
     /**
      * Offer data to be loaded to the target.
      */
-    public void loadToTarget() {
-
-    }
+    protected abstract void loadToTarget() throws PadlException;
 
 }
