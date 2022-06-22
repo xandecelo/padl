@@ -7,7 +7,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
         @Type(value = LDAPSourceConfig.class, name = LDAPSourceConfig.TYPE),
-        @Type(value = DatabaseSourceConfig.class, name = DatabaseSourceConfig.TYPE)
+        @Type(value = DatabaseSourceConfig.class, name = DatabaseSourceConfig.TYPE),
+        @Type(value = StructuralSourceConfig.class, name = StructuralSourceConfig.TYPE)
 })
 public abstract class PadlSourceConfig {
 
