@@ -1,0 +1,2 @@
+org.alefzero.padl.sources.LdapSourceFactory
+org.alefzero.padl.sources.DatabaseSourceFactory

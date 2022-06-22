@@ -3,6 +3,7 @@ package org.alefzero.padl.core;
 import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,7 +14,8 @@ import org.slf4j.LoggerFactory;
 
 class ConfiguratorHelperTest {
 
-    Logger logger = LoggerFactory.getLogger(ConfiguratorHelperTest.class);
+    final static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    
     @Test
     public void testEnviromentConfiguration() throws IOException {
         String output = new ConfiguratorHelper().outputEnv();        

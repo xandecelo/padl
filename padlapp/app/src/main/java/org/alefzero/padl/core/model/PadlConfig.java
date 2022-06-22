@@ -88,4 +88,8 @@ public class PadlConfig {
                 + ", type=" + type + ", useTLS=" + useTLS + "]";
     }
 
+    public String getBindCn() {
+        return String.format("cn=admin,%s", this.getRootDN());
+    }
+
 }

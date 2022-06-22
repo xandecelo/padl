@@ -5,11 +5,11 @@ import org.alefzero.padl.core.services.PadlSourceFactory;
 /**
  * Ldap source factory builder.
  */
-public class LdapSourceFactory extends PadlSourceFactory {
+public class DatabaseSourceFactory extends PadlSourceFactory {
 
     @Override
-    public LdapSource getInstance() {
-        return new LdapSource();
+    public DatabaseSource getInstance() {
+        return new DatabaseSource();
     }
 
 }

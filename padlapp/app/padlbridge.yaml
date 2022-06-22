@@ -8,6 +8,12 @@ type: openldap
 sources:
 - id: ldap1
   type: ldap
+  host: 192.168.0.10
+  port: 11389
+  bindCN: cn=admin,cn=config
+  bindPassword: user123
+  dn: dc=alefzero,dc=org
+  useTLS: false
 - id: ldap2
   type: database
   dn: dc=alefzero,dc=org
