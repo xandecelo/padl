@@ -16,10 +16,8 @@ import org.slf4j.LoggerFactory;
 public abstract class PadlSource {
 
     final static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    private PadlSourceConfig config;
-
-    abstract public String getId();
+    
+    public abstract String getId();
 
     /**
      * Generate a list of configuration entries to be processed by the target in a
@@ -36,14 +34,8 @@ public abstract class PadlSource {
      * @return the configuration associated with this source.
      * @throws NullPointerException with not yet configured
      */
-
-    public PadlSourceConfig getConfig() throws NullPointerException {
-        if (config == null) {
-            throw new NullPointerException("Service is not yet configured with setup method.");
-        }
-        return config;
-    }
-
+    public abstract PadlSourceConfig getConfig() throws NullPointerException;
+    
     /**
      * Entangle this source service to run with a configuration and a target
      * service and do all the preparation necessary to start the data processing
@@ -66,8 +58,12 @@ public abstract class PadlSource {
      * @throws PadlException
      */
     public void orchestrateProcess() throws PadlException {
-        configureTarget();
-        loadToTarget();
+        if (getTarget() != null) {
+            configureTarget();
+            loadToTarget();
+        } else {
+            logger.error("Last is not ready for use. Check your configuration. Skipping...");
+        }
     }
 
     /**
@@ -76,9 +72,8 @@ public abstract class PadlSource {
      * @throws PadlException
      */
     protected void configureTarget() throws PadlException {
-        if (getTarget() != null) {
-            getTarget().addConfiguration(getConfigurationEntries());
-        }
+
+        getTarget().addConfiguration(getConfigurationEntries());
     }
 
     /**

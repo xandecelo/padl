@@ -86,22 +86,30 @@ public class LdapSource extends PadlSource {
     }
 
     @Override
-    public void entangle(PadlSourceConfig sourceConfig, PadlTarget target) {
-        if (!(sourceConfig instanceof LDAPSourceConfig)) {
-            logger.error("Configuration for {} type is invalid.", sourceConfig);
+    public void entangle(PadlSourceConfig sourceConfiguration, PadlTarget targetService) {
+        if (!(sourceConfiguration instanceof LDAPSourceConfig)) {
+            logger.error("Configuration for {} type is invalid.", sourceConfiguration);
             throw new IllegalArgumentException("Configuration type is invalid for this source service.");
         }
-        if (!target.isReady()) {
-            logger.error("Target [{}] type is not ready.", target);
+        if (!targetService.isReady()) {
+            logger.error("Target [{}] type is not ready.", targetService);
             throw new IllegalArgumentException("Check your configuration and prepare your target correctly.");
         }
-        this.config = (LDAPSourceConfig) sourceConfig;
-        this.target = target;
+        this.config = (LDAPSourceConfig) sourceConfiguration;
+        this.target = targetService;
     }
 
     @Override
     public PadlTarget getTarget() {
         return this.target;
+    }
+
+    @Override
+    public PadlSourceConfig getConfig() throws NullPointerException {
+        if (config == null) {
+            throw new NullPointerException("Service is not yet configured with setup method.");
+        }
+        return config;
     }
 
 }
