@@ -1,4 +1,4 @@
-FROM padlbase:latest
+FROM alefzero/padlbase:latest
 
 WORKDIR ${PADLBRIDGE_HOME}
 COPY ldap/ ${PADLBRIDGE_HOME}
