@@ -1,5 +1,7 @@
 FROM alefzero/padlbase:latest
 
+ENV PATH $PATH:${PADLBRIDGE_HOME}
+
 WORKDIR ${PADLBRIDGE_HOME}
 COPY ldap/ ${PADLBRIDGE_HOME}
 
@@ -21,4 +23,4 @@ RUN echo "Building..."; ./gradlew --no-daemon --quiet build ; \
 WORKDIR ${PADLBRIDGE_HOME}
 
 ENTRYPOINT [ "/bin/bash", "-c" ]
-CMD [ "${PADLBRIDGE_HOME}/run.sh" ]
+CMD [ "${PADLBRIDGE_HOME}/padl.sh" ]

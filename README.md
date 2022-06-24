@@ -3,16 +3,41 @@
 
 Makes easier to reach through gap between LDAP and external input datasources.
 
+
+# Configuration
+
+- Run the container indicating the variable and the file location inside the container
+```bash
+docker run -it --rm -p 10289:389 -e PADL_CONFIG_FILE=/opt/padlbridge.yaml alefzero/padl
+```
+- Extend the dockerfile using an enviroment variable PADL_CONFIG_FILE:
+```docker
+FROM alefzero/padl
+PADL_CONFIG_FILE=/opt/padlbridge.yaml
+```
+- UExtend the dockefile using an explicit run file configuration:
+```docker
+FROM alefzero/padl
+CMD [ "padl.sh run /opt/padlbridge.yaml" ]
+
+# or
+
+FROM alefzero/padl
+ENTRYPOINT [ "padl.sh", "run", "/opt/padlbridge.yaml" ]
+
+```
+The environment variable has precedence if you declare both enviroment variable and explicit run file configuration.
+
+
 # Building with docker
 
 ```bash
 
 # Build
-docker build -t padlbase padlbase
-docker build -t padl .
+docker build -t alefzero/padl .
 
 # Run (example)
-docker run -it --rm -p 10389:389 --name padl padl
+docker run -it --rm -p 10389:389 --name padl alefzero/padl
 
 ```
 

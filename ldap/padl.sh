@@ -3,10 +3,19 @@
 CONFIG_FILE=$1
 PADL_APP=app
 
+if [ -e ${PADL_CONFIG_FILE} ]
+then 
+    CONFIG_FILE="${PADL_CONFIG_FILE}"
+    echo "Using configuration file provided by PADL_CONFIG_FILE variable."
+fi
+
 if [ ! -e ${CONFIG_FILE} ]
 then
     CONFIG_FILE="${PADLBRIDGE_HOME}/padlbridge.yaml"
+    echo "No configuration file specified. "
 fi
+
+echo "Using configuration file located at ${CONFIG_FILE}."
 
 pushd() {
     command pushd $@ > /dev/null
