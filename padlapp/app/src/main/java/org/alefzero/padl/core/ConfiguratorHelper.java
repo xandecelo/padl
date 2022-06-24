@@ -50,9 +50,6 @@ public class ConfiguratorHelper {
         sb.append("PADLBRIDGE_ROOT_CONFIG_PASSWORD=").append(config.getRootConfigPassword()).append("\n");
         sb.append("PADLBRIDGE_ADMIN_PASSWORD=").append(config.getAdminPassword()).append("\n");
         sb.append("PADLBRIDGE_ROOT_DN=").append(config.getRootDN()).append("\n");
-        //System.out.printf("PADLBRIDGE_ROOT_CONFIG_PASSWORD=%s\n", config.getRootConfigPassword());
-        //System.out.printf("PADLBRIDGE_ADMIN_PASSWORD=%s\n", config.getAdminPassword());
-        //System.out.printf("PADLBRIDGE_ROOT_DN=%s\n", config.getRootDN());
         return sb.toString();
     }
 
