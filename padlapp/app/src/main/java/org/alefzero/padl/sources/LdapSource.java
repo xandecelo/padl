@@ -130,8 +130,8 @@ public class LdapSource extends PadlSource {
             // IMP: change dn target mapping
             for (Entry entry : entryCursor) {
                 // Prevents adding the searched DN
-                if (getConfig().getDn().equalsIgnoreCase(entry.getDn().getName()))
-                    continue;
+                //if (getConfig().getDn().equalsIgnoreCase(entry.getDn().getName()))
+                  //  continue;
                 getTarget().addEntry(entry);
             }
         } catch (LdapException e) {
