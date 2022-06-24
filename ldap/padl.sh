@@ -3,16 +3,21 @@
 CONFIG_FILE=$1
 PADL_APP=app
 
-if [ -e ${PADL_CONFIG_FILE} ]
-then 
+echo "Checking configuration file location."
+if [ -z ${PADL_CONFIG_FILE} ]
+then
+    echo "Variable PADL_CONFIG_FILE is not set."
+else
     CONFIG_FILE="${PADL_CONFIG_FILE}"
     echo "Using configuration file provided by PADL_CONFIG_FILE variable."
 fi
 
-if [ ! -e ${CONFIG_FILE} ]
+if [ -z ${CONFIG_FILE} ]
 then
     CONFIG_FILE="${PADLBRIDGE_HOME}/padlbridge.yaml"
-    echo "No configuration file specified. "
+    echo "No configuration file specified. Using configuration file default location."
+else 
+    echo "Configuration file parameter provided."
 fi
 
 echo "Using configuration file located at ${CONFIG_FILE}."
