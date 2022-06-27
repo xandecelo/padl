@@ -28,4 +28,9 @@ public class PadlUtils {
         }
         return items;
     }
+
+    public static String safeToLower(String string) {
+        String data = string != null ? string.toLowerCase() : null;
+        return data;
+    }
 }

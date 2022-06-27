@@ -1,6 +1,9 @@
 package org.alefzero.padl.core.model;
 
+import java.util.HashSet;
 import java.util.Set;
+
+import org.alefzero.padl.utils.PadlUtils;
 
 public class DatabaseSourceConfig extends PadlSourceConfig {
 
@@ -49,7 +52,7 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
     }
 
     public void setQuery(String query) {
-        this.query = query;
+        this.query = PadlUtils.safeToLower(query);
     }
 
     public Set<String> getDatamap() {
@@ -58,6 +61,13 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
 
     public void setDatamap(Set<String> datamap) {
         this.datamap = datamap;
+        // this.datamap = null;
+        // if (datamap != null) {
+        //     this.datamap = new HashSet<String>();
+        //     datamap.forEach(data -> {
+        //         this.datamap.add(PadlUtils.safeToLower(data));
+        //     });
+        // }
     }
 
     public Set<String> getObjectClasses() {
@@ -73,7 +83,7 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
     }
 
     public void setUid(String uid) {
-        this.uid = uid;
+        this.uid = PadlUtils.safeToLower(uid);
     }
 
     public String getLdapType() {

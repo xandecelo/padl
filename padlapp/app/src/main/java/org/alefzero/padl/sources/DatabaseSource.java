@@ -98,9 +98,16 @@ public class DatabaseSource extends PadlSource {
 
                     String uidValue = rs.getString(uidCol.getColumnName());
                     List<Attribute> attributeList = new LinkedList<Attribute>();
+
                     for (DBMetadataModel col : collumns) {
-                        logger.debug("Getting database data {} - > {}})", col.getColumnName(),
-                                rs.getString(col.getColumnName()));
+                        
+                        if (rs.getObject(col.getColumnName()) == null) {
+                            logger.error("Found a null value for a specified collumn ({}). Ignoring attribute...", col.getColumnName());
+                            continue;
+                        }
+
+                        logger.info("Attribute data: {} - {}  -  {}", collumns,  getLDAPAttributeName(col.getColumnName()), col.getColumnName());
+                        logger.debug("Getting database data {} - > {}})", col.getColumnName(), rs.getString(col.getColumnName()));
                         Attribute attribute = null;
                         switch (col.getColumnType()) {
                             case Types.DATE:
@@ -179,6 +186,7 @@ public class DatabaseSource extends PadlSource {
     }
 
     private String getLDAPAttributeName(String databaseCollumnName) {
+        logger.debug("Searching if database column {} has a ldap mapped match", databaseCollumnName);
         return columnNames.get(databaseCollumnName);
     }
 

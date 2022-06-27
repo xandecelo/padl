@@ -10,8 +10,8 @@ public class DBMetadataModel {
 
     public DBMetadataModel(int columnIndex, String columnName, String columnLabel, int columnType, int columnScale) {
         this.columnIndex = columnIndex;
-        this.columnName = columnName;
-        this.columnLabel = columnLabel;
+        setColumnName(columnName);
+        setColumnLabel(columnLabel);
         this.columnType = columnType;
         this.columnScale = columnScale;
     }
@@ -21,6 +21,7 @@ public class DBMetadataModel {
     }
 
     public void setColumnName(String columnName) {
+        columnName = columnName == null ? null : columnName.toLowerCase();
         this.columnName = columnName;
     }
 
@@ -29,6 +30,7 @@ public class DBMetadataModel {
     }
 
     public void setColumnLabel(String columnLabel) {
+        columnLabel = columnLabel == null ? null : columnLabel.toLowerCase();
         this.columnLabel = columnLabel;
     }
 
