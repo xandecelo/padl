@@ -35,6 +35,7 @@ public class PadlProcess {
             }
         } catch (PadlException e) {
             logger.error("Error processing data: {}", e.getMessage());
+            e.printStackTrace();
         }
     }
 
