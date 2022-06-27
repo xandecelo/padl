@@ -64,7 +64,7 @@ public class DatabaseSource extends PadlSource {
 
     @Override
     protected void loadToTarget() throws PadlException {
-        // TODO Auto-generated method stub
-        
+        logger.debug("Reading metadata from database...");
+           
     }
 }

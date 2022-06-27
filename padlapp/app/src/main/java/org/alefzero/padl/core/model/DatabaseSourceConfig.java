@@ -15,6 +15,7 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
     private String dbUsername;
     private String dbPassword;
     private String query;
+    private String uid;
     private Set<String> datamap;
     private Set<String> objectClasses;
 
@@ -54,7 +55,7 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
         return datamap;
     }
 
-    public void setDataMap(Set<String> datamap) {
+    public void setDatamap(Set<String> datamap) {
         this.datamap = datamap;
     }
 
@@ -64,6 +65,14 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
 
     public void setObjectClasses(Set<String> objectClasses) {
         this.objectClasses = objectClasses;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
     @Override
