@@ -8,6 +8,7 @@ import org.alefzero.padl.core.exceptions.PadlException;
 import org.alefzero.padl.core.model.PadlConfig;
 import org.alefzero.padl.utils.LdapUtils;
 import org.apache.directory.api.ldap.model.entry.Entry;
+import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsException;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
 import org.slf4j.Logger;
@@ -61,6 +62,10 @@ public abstract class PadlTarget implements GenericService {
     public void addEntry(Entry entry) throws PadlException {
         try {
             getConnection().add(entry);
+        } catch (LdapEntryAlreadyExistsException e) {
+            logger.error("Entry {} already exists at the target LDAP. Ignoring...", entry.getDn());
+            logger.debug("Entry detail ", entry);
+            throw new PadlException(e);
         } catch (LdapException e) {
             throw new PadlException(e);
         }
@@ -128,4 +133,5 @@ public abstract class PadlTarget implements GenericService {
             }
         }
     }
+
 }
