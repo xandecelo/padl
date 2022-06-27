@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StructuralSource extends PadlSource {
-    
+
     final static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final String ID = "structural";
@@ -50,12 +50,12 @@ public class StructuralSource extends PadlSource {
             logger.error("Configuration for {} type is invalid.", sourceConfiguration);
             throw new IllegalArgumentException("Configuration type is invalid for this source service.");
         }
-        if (!target.isReady()) {
-            logger.error("Target [{}] type is not ready.", target);
+        if (!targetService.isReady()) {
+            logger.error("Target [{}] type is not ready.", targetService);
             throw new IllegalArgumentException("Check your configuration and prepare your target correctly.");
         }
         this.config = (StructuralSourceConfig) sourceConfiguration;
-        this.target = targetService;        
+        this.target = targetService;
     }
 
     @Override
@@ -76,10 +76,16 @@ public class StructuralSource extends PadlSource {
             }
         }
         try {
-            target.addEntry(LdapUtils.createEntry(config.getDn(), config.getLdapType(), config.getValue(), config.getObjectClasses(), attributes));
+            target.addEntry(LdapUtils.createEntry(config.getDn(), config.getLdapType(), config.getValue(),
+                    config.getObjectClasses(), attributes));
         } catch (LdapException e) {
             throw new PadlException(e);
         }
     }
-    
+
+    @Override
+    public String toString() {
+        return String.format("StructuralSource - %s", this.getId());
+    }
+
 }

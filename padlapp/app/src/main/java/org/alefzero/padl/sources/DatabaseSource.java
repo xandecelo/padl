@@ -57,8 +57,8 @@ public class DatabaseSource extends PadlSource {
             logger.error("Configuration for {} type is invalid.", sourceConfiguration);
             throw new IllegalArgumentException("Configuration type is invalid for this source service.");
         }
-        if (!target.isReady()) {
-            logger.error("Target [{}] type is not ready.", target);
+        if (!targetService.isReady()) {
+            logger.error("Target [{}] type is not ready.", targetService);
             throw new IllegalArgumentException("Check your configuration and prepare your target correctly.");
         }
         this.config = (DatabaseSourceConfig) sourceConfiguration;
