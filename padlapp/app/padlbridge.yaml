@@ -14,6 +14,11 @@ sources:
   bindPassword: user123
   dn: dc=alefzero,dc=org
   useTLS: false
+- id: structure1
+  type: structural
+  dn: ou=users,dc=alefzero,dc=org
+  objectType: organizationName
+  objectClasses: [ top ]
 - id: db1
   type: database
   dn: cn=%s,ou=users,dc=alefzero,dc=org
