@@ -72,7 +72,10 @@ public abstract class PadlSource {
      * @throws PadlException
      */
     protected void configureTarget() throws PadlException {
-        getTarget().addConfiguration(getConfigurationEntries());
+        List<Entry> configurationEntries = getConfigurationEntries();
+        if (null != configurationEntries && ! configurationEntries.isEmpty()) {
+            getTarget().addConfiguration(configurationEntries);
+        }
     }
 
     /**
