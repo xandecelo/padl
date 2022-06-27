@@ -122,6 +122,7 @@ public class LdapSource extends PadlSource {
         try (LdapNetworkConnection sourceConn = LdapUtils.getConnection(config.getHost(), config.getPort(),
                 config.getUseTLS(),
                 config.getBindCN(), config.getBindPassword())) {
+            sourceConn.bind();
             Dn dn = new Dn(getConfig().getDn());
             // IMP: filter can be parametrized in YAML
             String filter = "(objectClass=*)";
@@ -130,8 +131,8 @@ public class LdapSource extends PadlSource {
             // IMP: change dn target mapping
             for (Entry entry : entryCursor) {
                 // Prevents adding the searched DN
-                //if (getConfig().getDn().equalsIgnoreCase(entry.getDn().getName()))
-                  //  continue;
+                // if (getConfig().getDn().equalsIgnoreCase(entry.getDn().getName()))
+                // continue;
                 getTarget().addEntry(entry);
             }
         } catch (LdapException e) {
