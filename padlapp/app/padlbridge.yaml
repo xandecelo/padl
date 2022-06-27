@@ -26,6 +26,8 @@ sources:
   dbUsername: orguser
   dbPassword: orguser123
   query: select * from users;
+  groupAttributes:
+    - memberOf
   datamap:
     - uid=username
     - mail=email

@@ -82,23 +82,25 @@ public class DatabaseSource extends PadlSource {
     @Override
     protected void loadToTarget() throws PadlException {
         logger.debug("Starting SQL processing [{}]", config.getQuery());
-        try (Connection conn = DriverManager.getConnection(config.getJdbcUrl(), config.getDbUsername(), config.getDbPassword())) {
+        try (Connection conn = DriverManager.getConnection(config.getJdbcUrl(), config.getDbUsername(),
+                config.getDbPassword())) {
             PreparedStatement ps = conn.prepareStatement(config.getQuery());
             ResultSet rs = ps.executeQuery();
             LinkedList<DBMetadataModel> collumns = this.getColumnMeta(rs);
+
+            // separate uid collumn from the "others" collums of this resultset.
+            // uid collumn is necessary for group processing (as intended for memberOf or uniqueMember)
+            DBMetadataModel uidCol = findUidCol(collumns);
+            collumns.remove(uidCol);
+
             try {
                 while (rs.next()) {
-                    List<Attribute> attributeList = new LinkedList<Attribute>();
-                    String uidValue = null;
 
-                    for (var col : collumns) {
+                    String uidValue = rs.getString(uidCol.getColumnName());
+                    List<Attribute> attributeList = new LinkedList<Attribute>();
+                    for (DBMetadataModel col : collumns) {
                         logger.debug("Getting database data {} - > {}})", col.getColumnName(),
                                 rs.getString(col.getColumnName()));
-
-                        if (config.getUid().equalsIgnoreCase(col.getColumnName())) {
-                            uidValue = rs.getString(col.getColumnName());
-                        }
-
                         Attribute attribute = null;
                         switch (col.getColumnType()) {
                             case Types.DATE:
@@ -138,14 +140,9 @@ public class DatabaseSource extends PadlSource {
                         }
                         attributeList.add(attribute);
                     }
-                    if (uidValue != null) {
-                        Entry entry = LdapUtils.createEntry(config.getDn(), config.getLdapType(), uidValue,
-                                config.getObjectClasses(), attributeList);
-                        target.addEntry(entry);
-                    } else {
-                        logger.error(
-                                "Ignoring data from datasource. Uid specification returned null. Check your configuration or nullable values at specified uid table.");
-                    }
+                    Entry entry = LdapUtils.createEntry(config.getDn(), config.getLdapType(), uidValue,
+                            config.getObjectClasses(), attributeList);
+                    target.addEntry(entry);
                 }
             } catch (LdapException e) {
                 logger.error("Error processing database source", e);
@@ -156,6 +153,23 @@ public class DatabaseSource extends PadlSource {
             logger.error("Error processing datasource:", e);
             throw new PadlException(e);
         }
+    }
+
+    private DBMetadataModel findUidCol(LinkedList<DBMetadataModel> collumns) throws PadlException {
+        DBMetadataModel uidCol = null;
+        for (DBMetadataModel col : collumns) {
+            if (config.getUid().equalsIgnoreCase(col.getColumnName())) {
+                uidCol = col;
+                break;
+            }
+        }
+        if (uidCol == null) {
+            logger.error(
+                    "Ignoring data from datasource {}. Uid specification not found. Check your configuration.",
+                    config.getId());
+            throw new PadlException("Uid specification not found");
+        }
+        return uidCol;
     }
 
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmssX");

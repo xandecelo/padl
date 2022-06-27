@@ -8,6 +8,7 @@ import org.alefzero.padl.core.exceptions.PadlException;
 import org.alefzero.padl.core.model.PadlConfig;
 import org.alefzero.padl.utils.LdapUtils;
 import org.apache.directory.api.ldap.model.entry.Entry;
+import org.apache.directory.api.ldap.model.entry.ModificationOperation;
 import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsException;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
@@ -71,6 +72,29 @@ public abstract class PadlTarget implements GenericService {
         }
     }
 
+   /**
+     * Process a list of entries to add
+     * 
+     * @throws PadlException when process fails
+     */
+    public void addEntry(Entry entry, boolean modify) throws PadlException {
+        try {
+            if (! getConnection().exists(entry.getDn())) {
+                getConnection().add(entry);
+            } else {
+                if (modify) {
+                    getConnection().modify(entry, ModificationOperation.ADD_ATTRIBUTE);
+                } else {
+                    logger.info("Entry {} already exists at the target LDAP. Ignoring...", entry.getDn());
+                    logger.debug("Entry detail ", entry);
+                }
+            }
+        } catch (LdapException e) {
+            throw new PadlException(e);
+        }
+    }
+
+
     protected abstract String getRootCN();
 
     public void addConfiguration(List<Entry> configurationEntries) throws PadlConfigurationException {
@@ -133,5 +157,4 @@ public abstract class PadlTarget implements GenericService {
             }
         }
     }
-
 }
