@@ -16,6 +16,7 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
     private String dbPassword;
     private String query;
     private String uid;
+    private String ldapType;
     private Set<String> datamap;
     private Set<String> objectClasses;
 
@@ -73,6 +74,14 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
 
     public void setUid(String uid) {
         this.uid = uid;
+    }
+
+    public String getLdapType() {
+        return ldapType;
+    }
+
+    public void setLdapType(String ldapType) {
+        this.ldapType = ldapType;
     }
 
     @Override

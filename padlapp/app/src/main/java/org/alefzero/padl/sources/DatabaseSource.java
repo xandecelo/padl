@@ -1,15 +1,30 @@
 package org.alefzero.padl.sources;
 
 import java.lang.invoke.MethodHandles;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.alefzero.padl.core.exceptions.PadlException;
 import org.alefzero.padl.core.model.DatabaseSourceConfig;
 import org.alefzero.padl.core.model.PadlSourceConfig;
 import org.alefzero.padl.core.services.PadlSource;
 import org.alefzero.padl.core.services.PadlTarget;
+import org.alefzero.padl.sources.db.DBMetadataModel;
+import org.alefzero.padl.utils.LdapUtils;
+import org.alefzero.padl.utils.PadlUtils;
+import org.apache.directory.api.ldap.model.entry.Attribute;
+import org.apache.directory.api.ldap.model.entry.DefaultAttribute;
 import org.apache.directory.api.ldap.model.entry.Entry;
+import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +39,7 @@ public class DatabaseSource extends PadlSource {
     private static final String ID = "database";
     private PadlTarget target;
     private DatabaseSourceConfig config;
+    private Map<String, String> columnNames = null;
 
     @Override
     public String getId() {
@@ -47,6 +63,7 @@ public class DatabaseSource extends PadlSource {
         }
         this.config = (DatabaseSourceConfig) sourceConfiguration;
         this.target = targetService;
+        this.columnNames = PadlUtils.split(config.getDatamap(), true);
     }
 
     @Override
@@ -64,7 +81,101 @@ public class DatabaseSource extends PadlSource {
 
     @Override
     protected void loadToTarget() throws PadlException {
-        logger.debug("Reading metadata from database...");
-           
+        logger.debug("Starting SQL processing [{}]", config.getQuery());
+        try (Connection conn = DriverManager.getConnection(config.getJdbcUrl(), config.getDbUsername(), config.getDbPassword())) {
+            PreparedStatement ps = conn.prepareStatement(config.getQuery());
+            ResultSet rs = ps.executeQuery();
+            LinkedList<DBMetadataModel> collumns = this.getColumnMeta(rs);
+            try {
+                while (rs.next()) {
+                    List<Attribute> attributeList = new LinkedList<Attribute>();
+                    String uidValue = null;
+
+                    for (var col : collumns) {
+                        logger.debug("Getting database data {} - > {}})", col.getColumnName(),
+                                rs.getString(col.getColumnName()));
+
+                        if (config.getUid().equalsIgnoreCase(col.getColumnName())) {
+                            uidValue = rs.getString(col.getColumnName());
+                        }
+
+                        Attribute attribute = null;
+                        switch (col.getColumnType()) {
+                            case Types.DATE:
+                            case Types.TIME:
+                            case Types.TIMESTAMP:
+                            case Types.TIMESTAMP_WITH_TIMEZONE:
+                            case Types.TIME_WITH_TIMEZONE:
+                                attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
+                                        fmtTime(rs.getTimestamp(col.getColumnName())));
+                                break;
+
+                            case Types.DOUBLE:
+                            case Types.FLOAT:
+                                attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
+                                        Double.toString(rs.getDouble(col.getColumnName())));
+                                break;
+                            case Types.NUMERIC:
+                                if (col.getColumnScale() > 0) {
+                                    attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
+                                            Double.toString(rs.getDouble(col.getColumnName())));
+                                    break;
+                                }
+                            case Types.INTEGER:
+                            case Types.SMALLINT:
+                                attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
+                                        Integer.toString(rs.getInt(col.getColumnName())));
+
+                            case Types.VARCHAR:
+                            case Types.CHAR:
+                            case Types.LONGNVARCHAR:
+                                attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
+                                        rs.getString(col.getColumnName()));
+                                break;
+                            default:
+                                attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
+                                        rs.getString(col.getColumnName()));
+                        }
+                        attributeList.add(attribute);
+                    }
+                    if (uidValue != null) {
+                        Entry entry = LdapUtils.createEntry(config.getDn(), config.getLdapType(), uidValue,
+                                config.getObjectClasses(), attributeList);
+                        target.addEntry(entry);
+                    } else {
+                        logger.error(
+                                "Ignoring data from datasource. Uid specification returned null. Check your configuration or nullable values at specified uid table.");
+                    }
+                }
+            } catch (LdapException e) {
+                logger.error("Error processing database source", e);
+                e.printStackTrace();
+            }
+            rs.close();
+        } catch (SQLException e) {
+            logger.error("Error processing datasource:", e);
+            throw new PadlException(e);
+        }
+    }
+
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmssX");
+
+    private String fmtTime(Date date) {
+        return sdf.format(date);
+    }
+
+    private String getLDAPAttributeName(String databaseCollumnName) {
+        return columnNames.get(databaseCollumnName);
+    }
+
+    private LinkedList<DBMetadataModel> getColumnMeta(ResultSet rs) throws SQLException {
+        logger.info("Reading metadata from database...");
+        LinkedList<DBMetadataModel> collumns = new LinkedList<DBMetadataModel>();
+        var meta = rs.getMetaData();
+        for (int i = 1; i <= meta.getColumnCount(); i++) {
+            collumns.add(new DBMetadataModel(i, meta.getColumnName(i), meta.getColumnLabel(i),
+                    meta.getColumnType(i), meta.getScale(i)));
+        }
+        return collumns;
     }
 }
