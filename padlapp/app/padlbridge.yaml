@@ -14,6 +14,19 @@ sources:
   bindPassword: user123
   dn: dc=alefzero,dc=org
   useTLS: false
-- id: ldap2
+- id: db1
   type: database
-  dn: dc=alefzero,dc=org
+  dn: cn=%s,ou=users,dc=alefzero,dc=org
+  jdbcUrl: jdbc:mariadb://192.168.0.10:3306/organization
+  dbUsername: orguser
+  dbPassword: orguser123
+  query: select * from users;
+  datamap:
+    - uid=username
+    - mail=email
+    - userPassword=pwd
+    - givenName=firstName
+    - sn=lastName
+    - mobile=phone
+  objectClasses: [ inetOrgPerson, person, top ]
+
