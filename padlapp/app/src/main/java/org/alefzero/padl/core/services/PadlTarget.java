@@ -61,15 +61,7 @@ public abstract class PadlTarget implements GenericService {
      * @throws PadlException when process fails
      */
     public void addEntry(Entry entry) throws PadlException {
-        try {
-            getConnection().add(entry);
-        } catch (LdapEntryAlreadyExistsException e) {
-            logger.error("Entry {} already exists at the target LDAP. Ignoring...", entry.getDn());
-            logger.debug("Entry detail ", entry);
-            throw new PadlException(e);
-        } catch (LdapException e) {
-            throw new PadlException(e);
-        }
+        addEntry(entry, false);
     }
 
    /**
@@ -78,6 +70,7 @@ public abstract class PadlTarget implements GenericService {
      * @throws PadlException when process fails
      */
     public void addEntry(Entry entry, boolean modify) throws PadlException {
+        logger.debug("Adding entry {}", entry);
         try {
             if (! getConnection().exists(entry.getDn())) {
                 getConnection().add(entry);
