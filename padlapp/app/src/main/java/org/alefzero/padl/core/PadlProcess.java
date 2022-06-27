@@ -33,8 +33,6 @@ public class PadlProcess {
                 source.entangle(sourceConfig, target);
                 source.orchestrateProcess();
             }
-            if (target.isReady()) {
-            }
         } catch (PadlException e) {
             logger.error("Error processing data: {}", e.getMessage());
         }
