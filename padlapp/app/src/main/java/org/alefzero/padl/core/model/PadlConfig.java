@@ -15,6 +15,7 @@ public class PadlConfig {
     private String rootConfigPassword;
     private Boolean useTLS;
     private String type;
+    private String oid;
     private List<PadlSourceConfig> sources = new LinkedList<PadlSourceConfig>();
 
     public String getHost() {
@@ -81,11 +82,19 @@ public class PadlConfig {
         this.sources = sources;
     }
 
+    public String getOid() {
+        return oid;
+    }
+
+    public void setOid(String oid) {
+        this.oid = oid;
+    }
+
     @Override
     public String toString() {
         return "PadlConfig [adminPassword=*****" + ", host=" + host + ", port=" + port
                 + ", rootConfigPassword=*****" + ", rootDN=" + rootDN + ", sources=" + sources
-                + ", type=" + type + ", useTLS=" + useTLS + "]";
+                + ", type=" + type + ", useTLS=" + useTLS + ", oid=" + oid + "]";
     }
 
     public String getBindCn() {

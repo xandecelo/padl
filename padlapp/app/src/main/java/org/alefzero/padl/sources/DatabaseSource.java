@@ -1,5 +1,6 @@
 package org.alefzero.padl.sources;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -8,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,8 +25,16 @@ import org.alefzero.padl.utils.LdapUtils;
 import org.alefzero.padl.utils.PadlUtils;
 import org.apache.directory.api.ldap.model.entry.Attribute;
 import org.apache.directory.api.ldap.model.entry.DefaultAttribute;
+import org.apache.directory.api.ldap.model.entry.DefaultEntry;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.schema.AttributeType;
+import org.apache.directory.api.ldap.model.schema.LdapSyntax;
+import org.apache.directory.api.ldap.model.schema.UsageEnum;
+import org.apache.directory.api.ldap.model.schema.registries.Schema;
+import org.apache.directory.api.ldap.model.schema.registries.SchemaLoader;
+import org.apache.directory.ldap.client.api.DefaultSchemaLoader;
+import org.apache.directory.ldap.client.api.LdapNetworkConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +47,8 @@ public class DatabaseSource extends PadlSource {
     final static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final String ID = "database";
+
+    private static final String IA5_SYNTAX_OID = "1.3.6.1.4.1.1466.115.121.1.26";
     private PadlTarget target;
     private DatabaseSourceConfig config;
     private Map<String, String> columnNames = null;
@@ -48,7 +60,54 @@ public class DatabaseSource extends PadlSource {
 
     @Override
     public List<Entry> getConfigurationEntries() {
-        return new LinkedList<Entry>();
+        List<Entry> attributesToConfigure = new LinkedList<Entry>();
+
+        // https://nightlies.apache.org/directory/api/2.1.0/apidocs/
+        try {
+
+            LdapNetworkConnection conn = target.getConnection();
+            List<String> ldapAttributesToConfigure = new LinkedList<String>(columnNames.values());
+            removeConfiguredAttributes(conn, ldapAttributesToConfigure);
+            if (ldapAttributesToConfigure.size() > 0) {
+                Entry entry = new DefaultEntry(String.format("cn=%s,cn=schema,cn=config",
+                        config.getId()));
+                entry.add("objectClass", "olcSchemaConfig");
+                entry.add("cn", config.getId());
+
+                for (String attribute : ldapAttributesToConfigure) {
+                    AttributeType at = new AttributeType(target.getNextOID());
+
+                    at.setDescription("PADL generated attribute for " + attribute);
+                    at.setNames(attribute);
+                    at.setUsage(UsageEnum.USER_APPLICATIONS);
+
+                    // IMPROVEMENT: create non-single-valued attributes.
+                    at.setSingleValued(true);
+
+                    // Syntax defaults to 1.3.6.1.4.1.1466.115.121.1.26 - IA5 String syntax
+                    at.setSyntax(new LdapSyntax(IA5_SYNTAX_OID));
+
+                    // IMPROVEMENT: Attribute creation should be done without raw code.
+                    String data = at.toString().replaceFirst("attributetype", "").replaceAll("\n", " ");
+                    entry.add("olcAttributeTypes", data);
+                    attributesToConfigure.add(entry);
+                }
+            }
+
+        } catch (LdapException | IOException e) {
+            logger.error("Cannot configure target attributes.", e);
+        }
+        return attributesToConfigure;
+    }
+
+    private void removeConfiguredAttributes(LdapNetworkConnection conn, Collection<String> ldapAttributes)
+            throws LdapException, IOException {
+        SchemaLoader loader = new DefaultSchemaLoader(conn);
+        for (Schema schema : loader.getAllEnabled()) {
+            loader.loadAttributeTypes(schema).forEach(entry -> {
+                ldapAttributes.remove(entry.get("m-name").get().getString());
+            });
+        }
     }
 
     @Override
@@ -64,6 +123,7 @@ public class DatabaseSource extends PadlSource {
         this.config = (DatabaseSourceConfig) sourceConfiguration;
         this.target = targetService;
         this.columnNames = PadlUtils.split(config.getDatamap(), true);
+
     }
 
     @Override
@@ -89,7 +149,8 @@ public class DatabaseSource extends PadlSource {
             LinkedList<DBMetadataModel> collumns = this.getColumnMeta(rs);
 
             // separate uid collumn from the "others" collums of this resultset.
-            // uid collumn is necessary for group processing (as intended for memberOf or uniqueMember)
+            // uid collumn is necessary for group processing (as intended for memberOf or
+            // uniqueMember)
             DBMetadataModel uidCol = findUidCol(collumns);
             collumns.remove(uidCol);
 
@@ -100,14 +161,13 @@ public class DatabaseSource extends PadlSource {
                     List<Attribute> attributeList = new LinkedList<Attribute>();
 
                     for (DBMetadataModel col : collumns) {
-                        
+
                         if (rs.getObject(col.getColumnName()) == null) {
-                            logger.error("Found a null value for a specified collumn ({}). Ignoring attribute...", col.getColumnName());
+                            logger.error("Found a null value for a specified collumn ({}). Ignoring attribute...",
+                                    col.getColumnName());
                             continue;
                         }
 
-                        logger.info("Attribute data: {} - {}  -  {}", collumns,  getLDAPAttributeName(col.getColumnName()), col.getColumnName());
-                        logger.debug("Getting database data {} - > {}})", col.getColumnName(), rs.getString(col.getColumnName()));
                         Attribute attribute = null;
                         switch (col.getColumnType()) {
                             case Types.DATE:

@@ -52,9 +52,6 @@ public class LdapSource extends PadlSource {
         try (sourceConn) {
             sourceConn.bind();
             SchemaLoader loaderSource = new DefaultSchemaLoader(sourceConn);
-            if (target.isReady()) {
-
-            }
             SchemaLoader loaderDest = new DefaultSchemaLoader(target.getConnection());
 
             Entry entry = new DefaultEntry(target.getSchemaCN(config.getId()));
@@ -85,7 +82,7 @@ public class LdapSource extends PadlSource {
             }
             configEntries.add(entry);
         } catch (LdapException e) {
-            e.printStackTrace();
+            logger.error("Cannot configure target attributes.", e);
         }
         return configEntries;
     }

@@ -1,9 +1,9 @@
 package org.alefzero.padl.utils;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 public class PadlUtils {
 
@@ -13,7 +13,7 @@ public class PadlUtils {
     }
 
     public synchronized static Map<String,String> split(Collection<String> data, boolean invertKeys) {
-        Map<String,String> items = new HashMap<String,String>();
+        Map<String,String> items = new TreeMap<String,String>(String.CASE_INSENSITIVE_ORDER);
         if (null != data) {
             for (String attribute : data) {
                 StringTokenizer stEqual = new StringTokenizer(attribute, "=");

@@ -24,6 +24,7 @@ public abstract class PadlTarget implements GenericService {
     private LdapNetworkConnection conn = null;
     private boolean availability = false;
     private PadlConfig config = null;
+    private int oidCount = 0;
 
     public abstract String getId();
 
@@ -63,15 +64,15 @@ public abstract class PadlTarget implements GenericService {
         addEntry(entry, false);
     }
 
-   /**
+    /**
      * Process a list of entries to add
      * 
      * @throws PadlException when process fails
      */
     public void addEntry(Entry entry, boolean modify) throws PadlException {
-        logger.debug("Adding entry {}", entry);
+        logger.trace("Adding entry {}", entry);
         try {
-            if (! getConnection().exists(entry.getDn())) {
+            if (!getConnection().exists(entry.getDn())) {
                 getConnection().add(entry);
             } else {
                 if (modify) {
@@ -85,7 +86,6 @@ public abstract class PadlTarget implements GenericService {
             throw new PadlException(e);
         }
     }
-
 
     protected abstract String getRootCN();
 
@@ -148,5 +148,24 @@ public abstract class PadlTarget implements GenericService {
                 // DO NOTHING
             }
         }
+    }
+
+    /*
+     * Use this OID to generate custom attributes from the sources.
+     * For example: if you inform the OID 1.3.6.1.4.1.99999.99 this target will
+     * generate attributes
+     * sequencially, adding an increment at the end of the identifier:
+     * 
+     * attribute1 - 1.3.6.1.4.1.99999.99.1
+     * attribute2 - 1.3.6.1.4.1.99999.99.2 ... and so on
+     * 
+     * Remember to specify an OID with a code you own and use a number at the end
+     * always available.
+     * If a code is already in use, the attribute won't be created, and possibily
+     * the data will be lost.
+     * 
+     */
+    public String getNextOID() {
+        return String.format(config.getOid() + ".%d", ++oidCount);
     }
 }
