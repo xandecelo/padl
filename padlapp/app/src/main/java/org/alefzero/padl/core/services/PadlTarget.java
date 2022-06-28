@@ -1,13 +1,17 @@
 package org.alefzero.padl.core.services;
 
 import java.lang.invoke.MethodHandles;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.alefzero.padl.core.exceptions.PadlConfigurationException;
 import org.alefzero.padl.core.exceptions.PadlException;
 import org.alefzero.padl.core.model.PadlConfig;
 import org.alefzero.padl.utils.LdapUtils;
+import org.apache.directory.api.ldap.model.entry.Attribute;
+import org.apache.directory.api.ldap.model.entry.DefaultModification;
 import org.apache.directory.api.ldap.model.entry.Entry;
+import org.apache.directory.api.ldap.model.entry.Modification;
 import org.apache.directory.api.ldap.model.entry.ModificationOperation;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
@@ -69,20 +73,31 @@ public abstract class PadlTarget implements GenericService {
      * 
      * @throws PadlException when process fails
      */
-    public void addEntry(Entry entry, boolean modify) throws PadlException {
+    public void addEntry(Entry entry, boolean addAttributes) throws PadlException {
         logger.trace("Adding entry {}", entry);
         try {
             if (!getConnection().exists(entry.getDn())) {
                 getConnection().add(entry);
             } else {
-                if (modify) {
-                    getConnection().modify(entry, ModificationOperation.ADD_ATTRIBUTE);
+                if (addAttributes) {
+                    Entry fromLdap = getConnection().lookup(entry.getDn());
+                    List<Modification> mods = new LinkedList<Modification>(); 
+
+                    for (Attribute att : entry.getAttributes()) {
+                        Attribute search = fromLdap.get(att.getId());
+                        if (search == null || !search.get().equals(att.get())) {
+                            mods.add(new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
+                                    att.getId(), att.get()));
+                        }
+                    }
+                    getConnection().modify(entry.getDn(), mods.toArray(new Modification[0]));
                 } else {
                     logger.info("Entry {} already exists at the target LDAP. Ignoring...", entry.getDn());
-                    logger.debug("Entry detail ", entry);
+                    logger.trace("Entry detail {}", entry);
                 }
             }
         } catch (LdapException e) {
+            e.printStackTrace();
             throw new PadlException(e);
         }
     }

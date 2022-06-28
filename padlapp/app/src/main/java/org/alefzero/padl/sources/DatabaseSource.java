@@ -9,11 +9,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.alefzero.padl.core.exceptions.PadlException;
 import org.alefzero.padl.core.model.DatabaseSourceConfig;
@@ -30,6 +33,8 @@ import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.schema.AttributeType;
 import org.apache.directory.api.ldap.model.schema.LdapSyntax;
+import org.apache.directory.api.ldap.model.schema.ObjectClass;
+import org.apache.directory.api.ldap.model.schema.ObjectClassTypeEnum;
 import org.apache.directory.api.ldap.model.schema.UsageEnum;
 import org.apache.directory.api.ldap.model.schema.registries.Schema;
 import org.apache.directory.api.ldap.model.schema.registries.SchemaLoader;
@@ -53,9 +58,30 @@ public class DatabaseSource extends PadlSource {
     private DatabaseSourceConfig config;
     private Map<String, String> columnNames = null;
 
+    private String customObjClass;
+
     @Override
     public String getId() {
         return ID;
+    }
+
+    public static void main(String[] args) throws LdapException {
+        LdapNetworkConnection conn = LdapUtils.getConnection("localhost", 10389, false, "cn=admin,cn=config",
+                "admin1234");
+        conn.bind();
+
+        ObjectClass objClass = new ObjectClass("1.3.6.1.4.1.66766.1.5.100.3");
+        objClass.setDescription("PADL generated category for dri");
+        objClass.setNames("driPadlClass");
+        objClass.setEnabled(true);
+        objClass.setType(ObjectClassTypeEnum.STRUCTURAL);
+        objClass.addMayAttributeTypeOids("1.3.6.1.4.1.66766.1.5.100.1");
+
+        System.out.println(objClass.toString().replaceFirst("objectclass", "").replaceAll("\n", " "));
+        // "olcObjectClasses"
+
+        conn.close();
+
     }
 
     @Override
@@ -74,6 +100,15 @@ public class DatabaseSource extends PadlSource {
                 entry.add("objectClass", "olcSchemaConfig");
                 entry.add("cn", config.getId());
 
+                customObjClass = config.getId() + "PadlClass";
+
+                ObjectClass objClass = new ObjectClass(target.getNextOID());
+                objClass.setDescription("PADL generated category for " + config.getId());
+                objClass.setNames(customObjClass);
+                objClass.setEnabled(true);
+                objClass.setType(ObjectClassTypeEnum.AUXILIARY);
+                objClass.setSuperiorOids(Arrays.asList(new String[] { "top" }));
+
                 for (String attribute : ldapAttributesToConfigure) {
                     AttributeType at = new AttributeType(target.getNextOID());
 
@@ -91,7 +126,11 @@ public class DatabaseSource extends PadlSource {
                     String data = at.toString().replaceFirst("attributetype", "").replaceAll("\n", " ");
                     entry.add("olcAttributeTypes", data);
                     attributesToConfigure.add(entry);
+                    objClass.addMayAttributeTypeOids(at.getOid());
                 }
+                entry.add("olcObjectClasses",
+                        objClass.toString().replaceFirst("objectclass", "").replaceAll("\n", " ").replaceAll("\t",
+                                " "));
             }
 
         } catch (LdapException | IOException e) {
@@ -153,6 +192,10 @@ public class DatabaseSource extends PadlSource {
             // uniqueMember)
             DBMetadataModel uidCol = findUidCol(collumns);
             collumns.remove(uidCol);
+            Set<String> objClassesToAdd = new TreeSet<String>(config.getObjectClasses());
+            if (customObjClass != null) {
+                objClassesToAdd.add(customObjClass);
+            }
 
             try {
                 while (rs.next()) {
@@ -208,8 +251,8 @@ public class DatabaseSource extends PadlSource {
                         attributeList.add(attribute);
                     }
                     Entry entry = LdapUtils.createEntry(config.getDn(), config.getLdapType(), uidValue,
-                            config.getObjectClasses(), attributeList);
-                    target.addEntry(entry);
+                            objClassesToAdd, attributeList);
+                    target.addEntry(entry, true);
                 }
             } catch (LdapException e) {
                 logger.error("Error processing database source", e);
@@ -246,7 +289,7 @@ public class DatabaseSource extends PadlSource {
     }
 
     private String getLDAPAttributeName(String databaseCollumnName) {
-        logger.debug("Searching if database column {} has a ldap mapped match", databaseCollumnName);
+        logger.trace("Searching if database column {} has a ldap mapped match", databaseCollumnName);
         return columnNames.get(databaseCollumnName);
     }
 
