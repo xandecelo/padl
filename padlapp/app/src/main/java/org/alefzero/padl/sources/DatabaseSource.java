@@ -33,6 +33,7 @@ import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.schema.AttributeType;
 import org.apache.directory.api.ldap.model.schema.LdapSyntax;
+import org.apache.directory.api.ldap.model.schema.MatchingRule;
 import org.apache.directory.api.ldap.model.schema.ObjectClass;
 import org.apache.directory.api.ldap.model.schema.ObjectClassTypeEnum;
 import org.apache.directory.api.ldap.model.schema.UsageEnum;
@@ -53,7 +54,8 @@ public class DatabaseSource extends PadlSource {
 
     private static final String ID = "database";
 
-    private static final String IA5_SYNTAX_OID = "1.3.6.1.4.1.1466.115.121.1.26";
+    // private static final String IA5_SYNTAX_OID = "1.3.6.1.4.1.1466.115.121.1.26";
+    private static final String IA5_SYNTAX_OID = "1.3.6.1.4.1.1466.115.121.1.15";
     private PadlTarget target;
     private DatabaseSourceConfig config;
     private Map<String, String> columnNames = null;
@@ -115,6 +117,8 @@ public class DatabaseSource extends PadlSource {
                     at.setDescription("PADL generated attribute for " + attribute);
                     at.setNames(attribute);
                     at.setUsage(UsageEnum.USER_APPLICATIONS);
+                    at.setEquality(new MatchingRule("caseIgnoreMatch"));
+                    at.setSubstring(new MatchingRule("caseIgnoreSubstringsMatch"));
 
                     // IMPROVEMENT: create non-single-valued attributes.
                     at.setSingleValued(true);

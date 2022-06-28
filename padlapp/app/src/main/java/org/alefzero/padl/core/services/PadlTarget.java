@@ -80,15 +80,25 @@ public abstract class PadlTarget implements GenericService {
                 getConnection().add(entry);
             } else {
                 if (addAttributes) {
-                    Entry fromLdap = getConnection().lookup(entry.getDn());
-                    List<Modification> mods = new LinkedList<Modification>(); 
+
+                    // Entry fromLdap = getConnection().lookup(entry.getDn());
+                    List<Modification> mods = new LinkedList<Modification>();
 
                     for (Attribute att : entry.getAttributes()) {
-                        Attribute search = fromLdap.get(att.getId());
-                        if (search == null || !search.get().equals(att.get())) {
+
+                        logger.trace("Comparing ldap with values {}, attribute {}, and value {}", entry.getDn(),
+                                att.getId(), att.get());
+                        if (!getConnection().compare(entry.getDn(), att.getId(), att.get())) {
                             mods.add(new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
                                     att.getId(), att.get()));
                         }
+
+                        // Attribute search = fromLdap.get(att.getId());
+                        // if (search == null || !search.get().equals(att.get())) {
+                        // mods.add(new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
+                        // att.getId(), att.get()));
+                        // }
+
                     }
                     getConnection().modify(entry.getDn(), mods.toArray(new Modification[0]));
                 } else {
