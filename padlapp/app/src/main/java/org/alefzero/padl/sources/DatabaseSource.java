@@ -184,7 +184,6 @@ public class DatabaseSource extends PadlSource {
 
             try {
                 while (rs.next()) {
-                    logger.debug("Data found: {}", rs.getString(1));
                     String uidValue = rs.getString(uidCol.getColumnName());
                     List<Attribute> attributeList = new LinkedList<Attribute>();
 
