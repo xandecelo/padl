@@ -67,25 +67,6 @@ public class DatabaseSource extends PadlSource {
         return ID;
     }
 
-    public static void main(String[] args) throws LdapException {
-        LdapNetworkConnection conn = LdapUtils.getConnection("localhost", 10389, false, "cn=admin,cn=config",
-                "admin1234");
-        conn.bind();
-
-        ObjectClass objClass = new ObjectClass("1.3.6.1.4.1.66766.1.5.100.3");
-        objClass.setDescription("PADL generated category for dri");
-        objClass.setNames("driPadlClass");
-        objClass.setEnabled(true);
-        objClass.setType(ObjectClassTypeEnum.STRUCTURAL);
-        objClass.addMayAttributeTypeOids("1.3.6.1.4.1.66766.1.5.100.1");
-
-        System.out.println(objClass.toString().replaceFirst("objectclass", "").replaceAll("\n", " "));
-        // "olcObjectClasses"
-
-        conn.close();
-
-    }
-
     @Override
     public List<Entry> getConfigurationEntries() {
         List<Entry> attributesToConfigure = new LinkedList<Entry>();
@@ -203,7 +184,7 @@ public class DatabaseSource extends PadlSource {
 
             try {
                 while (rs.next()) {
-
+                    logger.debug("Data found: {}", rs.getString(1));
                     String uidValue = rs.getString(uidCol.getColumnName());
                     List<Attribute> attributeList = new LinkedList<Attribute>();
 
@@ -216,43 +197,46 @@ public class DatabaseSource extends PadlSource {
                         }
 
                         Attribute attribute = null;
-                        switch (col.getColumnType()) {
-                            case Types.DATE:
-                            case Types.TIME:
-                            case Types.TIMESTAMP:
-                            case Types.TIMESTAMP_WITH_TIMEZONE:
-                            case Types.TIME_WITH_TIMEZONE:
-                                attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
-                                        fmtTime(rs.getTimestamp(col.getColumnName())));
-                                break;
+                        String ldapColName = getLDAPAttributeName(col.getColumnName());
+                        if (ldapColName != null) {
+                            switch (col.getColumnType()) {
+                                case Types.DATE:
+                                case Types.TIME:
+                                case Types.TIMESTAMP:
+                                case Types.TIMESTAMP_WITH_TIMEZONE:
+                                case Types.TIME_WITH_TIMEZONE:
+                                    attribute = new DefaultAttribute(ldapColName,
+                                            fmtTime(rs.getTimestamp(col.getColumnName())));
+                                    break;
 
-                            case Types.DOUBLE:
-                            case Types.FLOAT:
-                                attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
-                                        Double.toString(rs.getDouble(col.getColumnName())));
-                                break;
-                            case Types.NUMERIC:
-                                if (col.getColumnScale() > 0) {
-                                    attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
+                                case Types.DOUBLE:
+                                case Types.FLOAT:
+                                    attribute = new DefaultAttribute(ldapColName,
                                             Double.toString(rs.getDouble(col.getColumnName())));
                                     break;
-                                }
-                            case Types.INTEGER:
-                            case Types.SMALLINT:
-                                attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
-                                        Integer.toString(rs.getInt(col.getColumnName())));
+                                case Types.NUMERIC:
+                                    if (col.getColumnScale() > 0) {
+                                        attribute = new DefaultAttribute(ldapColName,
+                                                Double.toString(rs.getDouble(col.getColumnName())));
+                                        break;
+                                    }
+                                case Types.INTEGER:
+                                case Types.SMALLINT:
+                                    attribute = new DefaultAttribute(ldapColName,
+                                            Integer.toString(rs.getInt(col.getColumnName())));
 
-                            case Types.VARCHAR:
-                            case Types.CHAR:
-                            case Types.LONGNVARCHAR:
-                                attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
-                                        rs.getString(col.getColumnName()));
-                                break;
-                            default:
-                                attribute = new DefaultAttribute(getLDAPAttributeName(col.getColumnName()),
-                                        rs.getString(col.getColumnName()));
+                                case Types.VARCHAR:
+                                case Types.CHAR:
+                                case Types.LONGNVARCHAR:
+                                    attribute = new DefaultAttribute(ldapColName,
+                                            rs.getString(col.getColumnName()));
+                                    break;
+                                default:
+                                    attribute = new DefaultAttribute(ldapColName,
+                                            rs.getString(col.getColumnName()));
+                            }
+                            attributeList.add(attribute);
                         }
-                        attributeList.add(attribute);
                     }
                     Entry entry = LdapUtils.createEntry(config.getDn(), config.getLdapType(), uidValue,
                             objClassesToAdd, attributeList);

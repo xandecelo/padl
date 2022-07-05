@@ -1,6 +1,7 @@
 package org.alefzero.padl.core.model;
 
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.alefzero.padl.utils.PadlUtils;
 
@@ -51,7 +52,7 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
     }
 
     public void setQuery(String query) {
-        this.query = PadlUtils.safeToLower(query);
+        this.query = query;
     }
 
     public Set<String> getDatamap() {
@@ -59,7 +60,8 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
     }
 
     public void setDatamap(Set<String> datamap) {
-        this.datamap = datamap;
+        this.datamap = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        this.datamap.addAll(datamap);
     }
 
     public Set<String> getObjectClasses() {
