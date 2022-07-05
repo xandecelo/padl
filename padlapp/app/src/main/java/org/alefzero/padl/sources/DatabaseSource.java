@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.alefzero.padl.core.exceptions.PadlException;
@@ -55,11 +56,12 @@ public class DatabaseSource extends PadlSource {
     private static final String ID = "database";
 
     // private static final String IA5_SYNTAX_OID = "1.3.6.1.4.1.1466.115.121.1.26";
-    private static final String IA5_SYNTAX_OID = "1.3.6.1.4.1.1466.115.121.1.15";
+    private static final String SYNTAX_OID = "1.3.6.1.4.1.1466.115.121.1.15";
     private PadlTarget target;
     private DatabaseSourceConfig config;
     private Map<String, String> columnNames = null;
-
+    private Map<String, AttributeType> customAttributesTypes = new TreeMap<String, AttributeType>(
+            String.CASE_INSENSITIVE_ORDER);
     private String customObjClass;
 
     @Override
@@ -92,26 +94,29 @@ public class DatabaseSource extends PadlSource {
                 objClass.setType(ObjectClassTypeEnum.AUXILIARY);
                 objClass.setSuperiorOids(Arrays.asList(new String[] { "top" }));
 
-                for (String attribute : ldapAttributesToConfigure) {
-                    AttributeType at = new AttributeType(target.getNextOID());
+                for (String attributeName : ldapAttributesToConfigure) {
+                    AttributeType attributeType = customAttributesTypes.get(attributeName);
+                    if (null == customAttributesTypes.get(attributeName)) {
+                        attributeType = new AttributeType(target.getNextOID());
 
-                    at.setDescription("PADL generated attribute for " + attribute);
-                    at.setNames(attribute);
-                    at.setUsage(UsageEnum.USER_APPLICATIONS);
-                    at.setEquality(new MatchingRule("caseIgnoreMatch"));
-                    at.setSubstring(new MatchingRule("caseIgnoreSubstringsMatch"));
+                        attributeType.setDescription("PADL generated attribute for " + attributeName);
+                        attributeType.setNames(attributeName);
+                        attributeType.setUsage(UsageEnum.USER_APPLICATIONS);
+                        attributeType.setEquality(new MatchingRule("caseIgnoreMatch"));
+                        attributeType.setSubstring(new MatchingRule("caseIgnoreSubstringsMatch"));
 
-                    // IMPROVEMENT: create non-single-valued attributes.
-                    at.setSingleValued(true);
+                        // IMPROVEMENT: create non-single-valued attributes.
+                        attributeType.setSingleValued(true);
 
-                    // Syntax defaults to 1.3.6.1.4.1.1466.115.121.1.26 - IA5 String syntax
-                    at.setSyntax(new LdapSyntax(IA5_SYNTAX_OID));
-
-                    // IMPROVEMENT: Attribute creation should be done without raw code.
-                    String data = at.toString().replaceFirst("attributetype", "").replaceAll("\n", " ");
-                    entry.add("olcAttributeTypes", data);
+                        // Syntax defaults to 1.3.6.1.4.1.1466.115.121.1.26 - IA5 String syntax
+                        attributeType.setSyntax(new LdapSyntax(SYNTAX_OID));
+                        customAttributesTypes.put(attributeName, attributeType);
+                        // IMPROVEMENT: Attribute creation should be done without raw code.
+                        String data = attributeType.toString().replaceFirst("attributetype", "").replaceAll("\n", " ");
+                        entry.add("olcAttributeTypes", data);
+                    }
                     attributesToConfigure.add(entry);
-                    objClass.addMayAttributeTypeOids(at.getOid());
+                    objClass.addMayAttributeTypeOids(attributeType.getOid());
                 }
                 entry.add("olcObjectClasses",
                         objClass.toString().replaceFirst("objectclass", "").replaceAll("\n", " ").replaceAll("\t",
@@ -129,7 +134,10 @@ public class DatabaseSource extends PadlSource {
         SchemaLoader loader = new DefaultSchemaLoader(conn);
         for (Schema schema : loader.getAllEnabled()) {
             loader.loadAttributeTypes(schema).forEach(entry -> {
-                ldapAttributes.remove(entry.get("m-name").get().getString());
+                String attributeName = entry.get("m-name").get().getString();
+                if (customAttributesTypes.get(attributeName) == null) {
+                    ldapAttributes.remove(attributeName);
+                }
             });
         }
     }
@@ -178,6 +186,7 @@ public class DatabaseSource extends PadlSource {
             DBMetadataModel uidCol = findUidCol(collumns);
             collumns.remove(uidCol);
             Set<String> objClassesToAdd = new TreeSet<String>(config.getObjectClasses());
+            
             if (customObjClass != null) {
                 objClassesToAdd.add(customObjClass);
             }

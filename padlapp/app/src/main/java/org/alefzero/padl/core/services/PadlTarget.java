@@ -29,7 +29,7 @@ public abstract class PadlTarget implements GenericService {
     private LdapNetworkConnection conn = null;
     private boolean availability = false;
     private PadlConfig config = null;
-    private int oidCount = 0;
+    private static int oidCount = 0;
 
     public abstract String getId();
 
@@ -83,16 +83,26 @@ public abstract class PadlTarget implements GenericService {
             } else {
                 if (addAttributes) {
                     List<Modification> mods = new LinkedList<Modification>();
-                    for (Attribute att : entry.getAttributes()) {
+                    for (Attribute sourceAttribute : entry.getAttributes()) {
                         logger.trace("Comparing ldap with values {}, attribute {}, and value {}", entry.getDn(),
-                                att.getId(), att.get());
-                        processingAttributeName = att.getId();
-                        if (!getConnection().compare(entry.getDn(), att.getId(), att.get())) {
+                                sourceAttribute.getId(), sourceAttribute.get());
+                        processingAttributeName = sourceAttribute.getId();
+                        boolean addAttribute = false;
+                        try {
+                            addAttribute = getConnection().compare(entry.getDn(), sourceAttribute.getId(), sourceAttribute.get());
+                        } catch (LdapNoSuchAttributeException e) {
+                            // DO NOTHING. Attribute was not found at target entry and addAttribute is already false;
+                        }
+                        if (! addAttribute) {
+                            logger.trace("Modification set to run: {}", (new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
+                            sourceAttribute.getId(), sourceAttribute.get())).toString());
                             mods.add(new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
-                                    att.getId(), att.get()));
+                                    sourceAttribute.getId(), sourceAttribute.get()));
                         }
                     }
-                    getConnection().modify(entry.getDn(), mods.toArray(new Modification[0]));
+                    if (! mods.isEmpty()){
+                        getConnection().modify(entry.getDn(), mods.toArray(new Modification[0]));
+                    }
                 } else {
                     logger.info("Entry {} already exists at the target LDAP. Ignoring...", entry.getDn());
                     logger.trace("Entry detail {}", entry);
