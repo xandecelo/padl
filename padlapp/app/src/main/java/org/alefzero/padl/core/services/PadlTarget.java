@@ -14,6 +14,7 @@ import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.entry.Modification;
 import org.apache.directory.api.ldap.model.entry.ModificationOperation;
 import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.exception.LdapNoSuchAttributeException;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,30 +76,21 @@ public abstract class PadlTarget implements GenericService {
      */
     public void addEntry(Entry entry, boolean addAttributes) throws PadlException {
         logger.trace("Adding entry {}", entry);
+        String processingAttributeName = null;
         try {
             if (!getConnection().exists(entry.getDn())) {
                 getConnection().add(entry);
             } else {
                 if (addAttributes) {
-
-                    // Entry fromLdap = getConnection().lookup(entry.getDn());
                     List<Modification> mods = new LinkedList<Modification>();
-
                     for (Attribute att : entry.getAttributes()) {
-
                         logger.trace("Comparing ldap with values {}, attribute {}, and value {}", entry.getDn(),
                                 att.getId(), att.get());
+                        processingAttributeName = att.getId();
                         if (!getConnection().compare(entry.getDn(), att.getId(), att.get())) {
                             mods.add(new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
                                     att.getId(), att.get()));
                         }
-
-                        // Attribute search = fromLdap.get(att.getId());
-                        // if (search == null || !search.get().equals(att.get())) {
-                        // mods.add(new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
-                        // att.getId(), att.get()));
-                        // }
-
                     }
                     getConnection().modify(entry.getDn(), mods.toArray(new Modification[0]));
                 } else {
@@ -106,8 +98,11 @@ public abstract class PadlTarget implements GenericService {
                     logger.trace("Entry detail {}", entry);
                 }
             }
+        } catch (LdapNoSuchAttributeException e) {
+            logger.error("Error processing attribute: {}", processingAttributeName, e);
+            throw new PadlException(e);
         } catch (LdapException e) {
-            e.printStackTrace();
+            logger.error("Error processing data: {}", entry, e);
             throw new PadlException(e);
         }
     }

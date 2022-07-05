@@ -26,8 +26,8 @@ public class PadlServicesManager {
     private static boolean sourcesConfigured = false;
 
     private static void loadTargets() {
-        logger.debug ("Loading target services...");
         if (!targetsConfigured) {
+            logger.debug ("Loading target services...");
             availableTargets = new HashMap<String, PadlTarget>();
             ServiceLoader<PadlTargetFactory> servicesFactories = ServiceLoader.load(PadlTargetFactory.class);
             for (PadlTargetFactory targetServiceFactory : servicesFactories) {
@@ -46,8 +46,8 @@ public class PadlServicesManager {
     }
 
     private static void loadSources() {
-        logger.debug ("Loading source services...");
         if (!sourcesConfigured) {
+            logger.debug ("Loading source services...");
             availableSources = new HashMap<String, PadlSource>();
             ServiceLoader<PadlSourceFactory> servicesFactories = ServiceLoader.load(PadlSourceFactory.class);
             for (PadlSourceFactory sourceServiceFactory : servicesFactories) {

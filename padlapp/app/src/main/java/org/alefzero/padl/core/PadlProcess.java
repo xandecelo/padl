@@ -29,7 +29,7 @@ public class PadlProcess {
             target.prepareResources(config);
             for (PadlSourceConfig sourceConfig : config.getSources()) {
                 PadlSource source =  PadlServicesManager.getSourceInstance(sourceConfig.getType());
-                logger.info("Processing config {} for source {}.", sourceConfig, source);
+                logger.info("Processing source {} with config {}.", sourceConfig.getId(), sourceConfig);
                 source.entangle(sourceConfig, target);
                 source.orchestrateProcess();
             }
