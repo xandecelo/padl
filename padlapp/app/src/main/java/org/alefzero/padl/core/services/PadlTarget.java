@@ -48,9 +48,9 @@ public abstract class PadlTarget implements GenericService {
                 config.getBindCn());
 
         try {
-            conn = LdapUtils.getConnection(config.getHost(), config.getPort(), false, config.getBindCn(),
+            this.conn = LdapUtils.getConnection(config.getHost(), config.getPort(), false, config.getBindCn(),
                     config.getAdminPassword());
-            conn.bind();
+            this.conn.bind();
         } catch (LdapException e) {
             logger.error("Error opening connection with target ldap. Reason: ", e);
             throw new PadlException("Could not open resources with configuration data.");
@@ -74,45 +74,52 @@ public abstract class PadlTarget implements GenericService {
      * 
      * @throws PadlException when process fails
      */
-    public void addEntry(Entry entry, boolean addAttributes) throws PadlException {
-        logger.trace("Adding entry {}", entry);
+    public void addEntry(Entry sourceEntry, boolean addAttributes) throws PadlException {
+        logger.trace("Adding entry {}", sourceEntry);
         String processingAttributeName = null;
         try {
-            if (!getConnection().exists(entry.getDn())) {
-                getConnection().add(entry);
+            if (!getConnection().exists(sourceEntry.getDn())) {
+                getConnection().add(sourceEntry);
             } else {
                 if (addAttributes) {
                     List<Modification> mods = new LinkedList<Modification>();
-                    for (Attribute sourceAttribute : entry.getAttributes()) {
-                        logger.trace("Comparing ldap with values {}, attribute {}, and value {}", entry.getDn(),
-                                sourceAttribute.getId(), sourceAttribute.get());
+                    for (Attribute sourceAttribute : sourceEntry.getAttributes()) {
                         processingAttributeName = sourceAttribute.getId();
-                        boolean addAttribute = false;
+                        boolean addThisAttribute = false;
                         try {
-                            addAttribute = getConnection().compare(entry.getDn(), sourceAttribute.getId(), sourceAttribute.get());
+                            addThisAttribute = getConnection().compare(sourceEntry.getDn(), sourceAttribute.getId(),
+                                    sourceAttribute.get());
+
                         } catch (LdapNoSuchAttributeException e) {
-                            // DO NOTHING. Attribute was not found at target entry and addAttribute is already false;
+                            // DO NOTHING. Attribute was not found at target entry and addThisAttribute is
+                            // already false;
                         }
-                        if (! addAttribute) {
-                            logger.trace("Modification set to run: {}", (new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
-                            sourceAttribute.getId(), sourceAttribute.get())).toString());
-                            mods.add(new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
-                                    sourceAttribute.getId(), sourceAttribute.get()));
+                        if (!addThisAttribute) {
+                            // Default 'modification mode' is to add. Since custom attributes are
+                            // single-value, change to replace
+
+                            Modification modification = new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
+                                    sourceAttribute.getId(), sourceAttribute.get());
+
+                            if ("modificado".equals(processingAttributeName))
+                                logger.debug("MODIFICADO {} ", modification);
+
+                            mods.add(modification);
                         }
                     }
-                    if (! mods.isEmpty()){
-                        getConnection().modify(entry.getDn(), mods.toArray(new Modification[0]));
+                    if (!mods.isEmpty()) {
+                        getConnection().modify(sourceEntry.getDn(), mods.toArray(new Modification[0]));
                     }
                 } else {
-                    logger.info("Entry {} already exists at the target LDAP. Ignoring...", entry.getDn());
-                    logger.trace("Entry detail {}", entry);
+                    logger.info("Entry {} already exists at the target LDAP. Ignoring...", sourceEntry.getDn());
+                    logger.trace("Entry detail {}", sourceEntry);
                 }
             }
         } catch (LdapNoSuchAttributeException e) {
-            logger.error("Error processing attribute: {}", processingAttributeName, e);
+            logger.error("Error processing attribute: {} for entry {}.", processingAttributeName, sourceEntry, e);
             throw new PadlException(e);
         } catch (LdapException e) {
-            logger.error("Error processing data: {}", entry, e);
+            logger.error("Error processing DN data ({}). Entry details: {}", sourceEntry.getDn(), sourceEntry, e);
             throw new PadlException(e);
         }
     }
@@ -120,14 +127,17 @@ public abstract class PadlTarget implements GenericService {
     protected abstract String getRootCN();
 
     public void addConfiguration(List<Entry> configurationEntries) throws PadlConfigurationException {
+        Entry processingEntry = null;
         try (LdapNetworkConnection rootConn = LdapUtils.getConnection(config.getHost(), config.getPort(),
                 config.getUseTLS(), this.getRootCN(), config.getRootConfigPassword())) {
             rootConn.bind();
             for (Entry configurationEntry : configurationEntries) {
+                processingEntry = configurationEntry;
                 rootConn.add(configurationEntry);
             }
         } catch (LdapException e) {
-            logger.error("Error at configuration phase of target ldap. Cause: {}", e);
+            logger.error("Error at configuration phase of target ldap.", e);
+            logger.debug("Error caused while adding generated entry configuration: {}", processingEntry);
             throw new PadlConfigurationException(e);
         }
     }
@@ -138,7 +148,7 @@ public abstract class PadlTarget implements GenericService {
      * @return
      */
     public LdapNetworkConnection getConnection() {
-        return conn;
+        return this.conn;
     }
 
     /**

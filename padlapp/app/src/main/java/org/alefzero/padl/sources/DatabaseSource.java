@@ -59,7 +59,7 @@ public class DatabaseSource extends PadlSource {
     private static final String SYNTAX_OID = "1.3.6.1.4.1.1466.115.121.1.15";
     private PadlTarget target;
     private DatabaseSourceConfig config;
-    private Map<String, String> columnNames = null;
+    private Map<String, String> databaseColumnMapping = null;
     private Map<String, AttributeType> customAttributesTypes = new TreeMap<String, AttributeType>(
             String.CASE_INSENSITIVE_ORDER);
     private String customObjClass;
@@ -71,13 +71,13 @@ public class DatabaseSource extends PadlSource {
 
     @Override
     public List<Entry> getConfigurationEntries() {
-        List<Entry> attributesToConfigure = new LinkedList<Entry>();
+        List<Entry> itemsToConfigure = new LinkedList<Entry>();
 
         // https://nightlies.apache.org/directory/api/2.1.0/apidocs/
         try {
 
             LdapNetworkConnection conn = target.getConnection();
-            List<String> ldapAttributesToConfigure = new LinkedList<String>(columnNames.values());
+            List<String> ldapAttributesToConfigure = new LinkedList<String>(databaseColumnMapping.values());
             removeConfiguredAttributes(conn, ldapAttributesToConfigure);
             if (ldapAttributesToConfigure.size() > 0) {
                 Entry entry = new DefaultEntry(String.format("cn=%s,cn=schema,cn=config",
@@ -94,13 +94,12 @@ public class DatabaseSource extends PadlSource {
                 objClass.setType(ObjectClassTypeEnum.AUXILIARY);
                 objClass.setSuperiorOids(Arrays.asList(new String[] { "top" }));
 
-                for (String attributeName : ldapAttributesToConfigure) {
-                    AttributeType attributeType = customAttributesTypes.get(attributeName);
-                    if (null == customAttributesTypes.get(attributeName)) {
+                for (String ldapAttributeNameToProcess : ldapAttributesToConfigure) {
+                    AttributeType attributeType = customAttributesTypes.get(ldapAttributeNameToProcess);
+                    if (null == attributeType) {
                         attributeType = new AttributeType(target.getNextOID());
-
-                        attributeType.setDescription("PADL generated attribute for " + attributeName);
-                        attributeType.setNames(attributeName);
+                        attributeType.setDescription("PADL generated attribute for " + ldapAttributeNameToProcess);
+                        attributeType.setNames(ldapAttributeNameToProcess);
                         attributeType.setUsage(UsageEnum.USER_APPLICATIONS);
                         attributeType.setEquality(new MatchingRule("caseIgnoreMatch"));
                         attributeType.setSubstring(new MatchingRule("caseIgnoreSubstringsMatch"));
@@ -108,25 +107,26 @@ public class DatabaseSource extends PadlSource {
                         // IMPROVEMENT: create non-single-valued attributes.
                         attributeType.setSingleValued(true);
 
-                        // Syntax defaults to 1.3.6.1.4.1.1466.115.121.1.26 - IA5 String syntax
                         attributeType.setSyntax(new LdapSyntax(SYNTAX_OID));
-                        customAttributesTypes.put(attributeName, attributeType);
+
+                        // Remember attributes already created
+                        customAttributesTypes.put(ldapAttributeNameToProcess, attributeType);
+
                         // IMPROVEMENT: Attribute creation should be done without raw code.
                         String data = attributeType.toString().replaceFirst("attributetype", "").replaceAll("\n", " ");
                         entry.add("olcAttributeTypes", data);
                     }
-                    attributesToConfigure.add(entry);
                     objClass.addMayAttributeTypeOids(attributeType.getOid());
                 }
                 entry.add("olcObjectClasses",
                         objClass.toString().replaceFirst("objectclass", "").replaceAll("\n", " ").replaceAll("\t",
                                 " "));
+                itemsToConfigure.add(entry);
             }
-
         } catch (LdapException | IOException e) {
             logger.error("Cannot configure target attributes.", e);
         }
-        return attributesToConfigure;
+        return itemsToConfigure;
     }
 
     private void removeConfiguredAttributes(LdapNetworkConnection conn, Collection<String> ldapAttributes)
@@ -154,7 +154,7 @@ public class DatabaseSource extends PadlSource {
         }
         this.config = (DatabaseSourceConfig) sourceConfiguration;
         this.target = targetService;
-        this.columnNames = PadlUtils.split(config.getDatamap(), true);
+        this.databaseColumnMapping = PadlUtils.split(config.getDatamap(), true);
 
     }
 
@@ -180,13 +180,13 @@ public class DatabaseSource extends PadlSource {
             ResultSet rs = ps.executeQuery();
             LinkedList<DBMetadataModel> collumns = this.getColumnMeta(rs);
 
-            // separate uid collumn from the "others" collums of this resultset.
-            // uid collumn is necessary for group processing (as intended for memberOf or
+            // separate uid collumn from the "others" columns of this resultset.
+            // uid column is necessary for group processing (as intended for memberOf or
             // uniqueMember)
             DBMetadataModel uidCol = findUidCol(collumns);
             collumns.remove(uidCol);
             Set<String> objClassesToAdd = new TreeSet<String>(config.getObjectClasses());
-            
+
             if (customObjClass != null) {
                 objClassesToAdd.add(customObjClass);
             }
@@ -286,7 +286,7 @@ public class DatabaseSource extends PadlSource {
 
     private String getLDAPAttributeName(String databaseCollumnName) {
         logger.trace("Searching if database column {} has a ldap mapped match", databaseCollumnName);
-        return columnNames.get(databaseCollumnName);
+        return databaseColumnMapping.get(databaseCollumnName);
     }
 
     private LinkedList<DBMetadataModel> getColumnMeta(ResultSet rs) throws SQLException {
