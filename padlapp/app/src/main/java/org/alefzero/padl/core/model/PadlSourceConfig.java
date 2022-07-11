@@ -1,5 +1,10 @@
 package org.alefzero.padl.core.model;
 
+import java.lang.invoke.MethodHandles;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -8,12 +13,20 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
         @Type(value = LDAPSourceConfig.class, name = LDAPSourceConfig.TYPE),
         @Type(value = DatabaseSourceConfig.class, name = DatabaseSourceConfig.TYPE),
-        @Type(value = StructuralSourceConfig.class, name = StructuralSourceConfig.TYPE)
+        @Type(value = StructuralSourceConfig.class, name = StructuralSourceConfig.TYPE),
+        @Type(value = ConfigSourceConfig.class, name = ConfigSourceConfig.TYPE)
 })
 public abstract class PadlSourceConfig {
 
+    final static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    public static final String LOAD_STRATEGY_MERGE = "merge";
+    public static final String LOAD_STRATEGY_REPLACE = "replace";
+    public static final String LOAD_STRATEGY_IGNORE = "ignore";
+
     private String id;
     private String dn;
+    private String loadStrategy = LOAD_STRATEGY_MERGE;
 
     public abstract String getType();
 
@@ -33,9 +46,26 @@ public abstract class PadlSourceConfig {
         this.dn = dn;
     }
 
+    public String getLoadStrategy() {
+        return loadStrategy;
+    }
+
+    public void setLoadStrategy(String loadStrategy) {
+        this.loadStrategy = loadStrategy != null ? loadStrategy.toLowerCase() : LOAD_STRATEGY_MERGE;
+        switch (this.loadStrategy) {
+            case LOAD_STRATEGY_IGNORE:
+            case LOAD_STRATEGY_MERGE:
+            case LOAD_STRATEGY_REPLACE:
+                break;
+            default:
+                logger.warn("Source load strategy [{}] is invalid. Using loadStrategy=merge as default.");
+                this.loadStrategy = LOAD_STRATEGY_MERGE;
+        }
+    }
+
     @Override
     public String toString() {
-        return "PadlSourceConfig [dn=" + dn + ", id=" + id + ", type=" + getType() + "]";
+        return "PadlSourceConfig [dn=" + dn + ", id=" + id + ", loadStrategy=" + loadStrategy + "]";
     }
 
 }

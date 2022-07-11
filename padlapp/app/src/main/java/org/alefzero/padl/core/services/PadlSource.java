@@ -72,6 +72,7 @@ public abstract class PadlSource {
      * @throws PadlException
      */
     protected void configureTarget() throws PadlException {
+        logger.info("Processing configuration for source id={}.", this.getConfig().getId());
         List<Entry> configurationEntries = getConfigurationEntries();
         if (null != configurationEntries && ! configurationEntries.isEmpty()) {
             getTarget().addConfiguration(configurationEntries);

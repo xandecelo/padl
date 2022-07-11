@@ -1,18 +1,22 @@
 package org.alefzero.padl.core.services;
 
 import java.lang.invoke.MethodHandles;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.alefzero.padl.core.exceptions.PadlConfigurationException;
 import org.alefzero.padl.core.exceptions.PadlException;
 import org.alefzero.padl.core.model.PadlConfig;
+import org.alefzero.padl.core.model.PadlSourceConfig;
 import org.alefzero.padl.utils.LdapUtils;
 import org.apache.directory.api.ldap.model.entry.Attribute;
 import org.apache.directory.api.ldap.model.entry.DefaultModification;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.entry.Modification;
 import org.apache.directory.api.ldap.model.entry.ModificationOperation;
+import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsException;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.exception.LdapNoSuchAttributeException;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
@@ -30,6 +34,7 @@ public abstract class PadlTarget implements GenericService {
     private boolean availability = false;
     private PadlConfig config = null;
     private static int oidCount = 0;
+    private Set<String> processedDNs = new HashSet<String>();
 
     public abstract String getId();
 
@@ -66,7 +71,7 @@ public abstract class PadlTarget implements GenericService {
      * @throws PadlException when process fails
      */
     public void addEntry(Entry entry) throws PadlException {
-        addEntry(entry, false);
+        addEntry(entry, PadlSourceConfig.LOAD_STRATEGY_MERGE);
     }
 
     /**
@@ -74,53 +79,71 @@ public abstract class PadlTarget implements GenericService {
      * 
      * @throws PadlException when process fails
      */
-    public void addEntry(Entry sourceEntry, boolean addAttributes) throws PadlException {
-        logger.trace("Adding entry {}", sourceEntry);
+    public void addEntry(Entry sourceEntry, String loadStrategy) throws PadlException {
+        logger.trace("Adding entry {} with strategy {}.", sourceEntry, loadStrategy);
         String processingAttributeName = null;
         try {
-            if (!getConnection().exists(sourceEntry.getDn())) {
-                getConnection().add(sourceEntry);
-            } else {
-                if (addAttributes) {
-                    List<Modification> mods = new LinkedList<Modification>();
-                    for (Attribute sourceAttribute : sourceEntry.getAttributes()) {
-                        processingAttributeName = sourceAttribute.getId();
-                        boolean addThisAttribute = false;
-                        try {
-                            addThisAttribute = getConnection().compare(sourceEntry.getDn(), sourceAttribute.getId(),
-                                    sourceAttribute.get());
+            // try to add, dont matter strategy
+            getConnection().add(sourceEntry);
+        } catch (LdapEntryAlreadyExistsException entryExistsException) {
+            // entry exists, so try one of strategies
+            try {
 
-                        } catch (LdapNoSuchAttributeException e) {
-                            // DO NOTHING. Attribute was not found at target entry and addThisAttribute is
-                            // already false;
+                switch (loadStrategy.toLowerCase()) {
+                    case PadlSourceConfig.LOAD_STRATEGY_IGNORE:
+                        logger.info("Entry {} already exists at the target LDAP. Ignoring...", sourceEntry.getDn());
+                        logger.trace("Entry detail {}", sourceEntry);
+                        break;
+                    case PadlSourceConfig.LOAD_STRATEGY_REPLACE:
+                        // Check if this entry has been already replaced by the source.
+                        // if so, new data from this source MUST merge.
+                        if (!processedDNs.contains(sourceEntry.getDn().toString())) {
+                            getConnection().delete(sourceEntry.getDn());
+                            getConnection().add(sourceEntry);
+                            processedDNs.add(sourceEntry.getDn().toString());
+                            break;
                         }
-                        if (!addThisAttribute) {
-                            // Default 'modification mode' is to add. Since custom attributes are
-                            // single-value, change to replace
+                        // Merge strategy is the default.
+                    case PadlSourceConfig.LOAD_STRATEGY_MERGE:
+                    default:
+                        List<Modification> mods = new LinkedList<Modification>();
+                        for (Attribute sourceAttribute : sourceEntry.getAttributes()) {
+                            processingAttributeName = sourceAttribute.getId();
+                            boolean addThisAttribute = false;
+                            try {
+                                addThisAttribute = getConnection().compare(sourceEntry.getDn(), sourceAttribute.getId(),
+                                        sourceAttribute.get());
 
-                            Modification modification = new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
-                                    sourceAttribute.getId(), sourceAttribute.get());
+                            } catch (LdapNoSuchAttributeException processingException) {
+                                // DO NOTHING. Attribute was not found at target entry and addThisAttribute is
+                                // already false;
+                            }
+                            if (!addThisAttribute) {
+                                // Default 'modification mode' is to add. Since custom attributes are
+                                // single-value, change to replace
 
-                            if ("modificado".equals(processingAttributeName))
-                                logger.debug("MODIFICADO {} ", modification);
-
-                            mods.add(modification);
+                                Modification modification = new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
+                                        sourceAttribute.getId(), sourceAttribute.get());
+                                mods.add(modification);
+                            }
                         }
-                    }
-                    if (!mods.isEmpty()) {
-                        getConnection().modify(sourceEntry.getDn(), mods.toArray(new Modification[0]));
-                    }
-                } else {
-                    logger.info("Entry {} already exists at the target LDAP. Ignoring...", sourceEntry.getDn());
-                    logger.trace("Entry detail {}", sourceEntry);
+                        if (!mods.isEmpty()) {
+                            getConnection().modify(sourceEntry.getDn(), mods.toArray(new Modification[0]));
+                        }
                 }
+            } catch (LdapNoSuchAttributeException e) {
+                logger.error("Error processing attribute: {} for entry {}.", processingAttributeName,
+                        sourceEntry, e);
+                throw new PadlException(e);
+            } catch (LdapException e) {
+                logger.error("Error processing DN data ({}). Entry details: {}", sourceEntry.getDn(),
+                        sourceEntry, e);
+                throw new PadlException(e);
             }
-        } catch (LdapNoSuchAttributeException e) {
-            logger.error("Error processing attribute: {} for entry {}.", processingAttributeName, sourceEntry, e);
-            throw new PadlException(e);
-        } catch (LdapException e) {
-            logger.error("Error processing DN data ({}). Entry details: {}", sourceEntry.getDn(), sourceEntry, e);
-            throw new PadlException(e);
+        } catch (LdapException ldapException) {
+            logger.error("Error processing DN data ({}). Entry details: {}", sourceEntry.getDn(),
+                    sourceEntry, ldapException);
+            throw new PadlException(ldapException);
         }
     }
 
@@ -137,7 +160,7 @@ public abstract class PadlTarget implements GenericService {
             }
         } catch (LdapException e) {
             logger.error("Error at configuration phase of target ldap.", e);
-            logger.debug("Error caused while adding generated entry configuration: {}", processingEntry);
+            logger.trace("Error caused while adding generated entry configuration: {}", processingEntry);
             throw new PadlConfigurationException(e);
         }
     }
@@ -207,5 +230,13 @@ public abstract class PadlTarget implements GenericService {
      */
     public String getNextOID() {
         return String.format(config.getOid() + ".%d", ++oidCount);
+    }
+
+    /**
+     * Prepare all resources necessary right before a source loads. Used for
+     * cleaning jobs.
+     */
+    public void prepareForSourceLoading() {
+        this.processedDNs = new HashSet<String>();
     }
 }

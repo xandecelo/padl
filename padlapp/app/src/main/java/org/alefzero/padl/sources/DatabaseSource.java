@@ -155,7 +155,7 @@ public class DatabaseSource extends PadlSource {
         this.config = (DatabaseSourceConfig) sourceConfiguration;
         this.target = targetService;
         this.databaseColumnMapping = PadlUtils.split(config.getDatamap(), true);
-
+        this.target.prepareForSourceLoading();
     }
 
     @Override
@@ -248,7 +248,7 @@ public class DatabaseSource extends PadlSource {
                     }
                     Entry entry = LdapUtils.createEntry(config.getDn(), config.getLdapType(), uidValue,
                             objClassesToAdd, attributeList);
-                    target.addEntry(entry, true);
+                    target.addEntry(entry, config.getLoadStrategy());
                 }
             } catch (LdapException e) {
                 logger.error("Error processing database source", e);

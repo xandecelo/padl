@@ -1,8 +1,12 @@
 package org.alefzero.padl.sources;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.alefzero.padl.core.exceptions.PadlException;
 import org.alefzero.padl.core.model.LDAPSourceConfig;
@@ -58,10 +62,26 @@ public class LdapSource extends PadlSource {
             entry.add("objectClass", "olcSchemaConfig");
             entry.add("cn", config.getId());
 
+            Set<String> targetAttributes = new HashSet<String>();
+
+            for (Schema schema : loaderDest.getAllEnabled()) {
+                for (Entry configEntry : loaderDest.loadAttributeTypes(schema)) {
+                    targetAttributes.add(configEntry.get("m-name").get().getString());
+                }
+            }
+
             for (Schema sourceSchema : loaderSource.getAllEnabled()) {
-                logger.info("Processing source schema [{}].", sourceSchema.getSchemaName());
+                logger.info("Processing source configuration schema [{}].", sourceSchema.getSchemaName());
                 Schema targetSchema = loaderDest.getSchema(sourceSchema.getSchemaName());
+
                 for (SchemaObjectWrapper sourceSOW : sourceSchema.getContent()) {
+                    String sourceAttributeName = sourceSOW.get().getName();
+                    String sourceAttributeType = sourceSOW.get().getObjectType().name();
+                    if (targetAttributes.contains(sourceAttributeName)) {
+                        logger.trace("Attribute {} already configured at target. Skipping...", sourceAttributeName);
+                        continue;
+                    }
+
                     if (!targetSchema.getContent().contains(sourceSOW)) {
                         String elem;
                         switch (sourceSOW.get().getObjectType()) {
@@ -72,7 +92,7 @@ public class LdapSource extends PadlSource {
                                 elem = "olcAttributeTypes";
                                 break;
                             default:
-                                elem = "'" + sourceSOW.get().getObjectType().name() + "'";
+                                elem = "'" + sourceAttributeType + "'";
                         }
                         logger.trace("Configuration to be added to the target: [{}, {}]", elem,
                                 sourceSOW.get().getSpecification());
@@ -81,7 +101,7 @@ public class LdapSource extends PadlSource {
                 }
             }
             configEntries.add(entry);
-        } catch (LdapException e) {
+        } catch (IOException | LdapException e) {
             logger.error("Cannot configure target attributes.", e);
         }
         return configEntries;
@@ -99,6 +119,7 @@ public class LdapSource extends PadlSource {
         }
         this.config = (LDAPSourceConfig) sourceConfiguration;
         this.target = targetService;
+        this.target.prepareForSourceLoading();
     }
 
     @Override
@@ -127,10 +148,7 @@ public class LdapSource extends PadlSource {
             EntryCursor entryCursor = sourceConn.search(dn, filter, SearchScope.SUBTREE, searchAttributes);
             // IMP: change dn target mapping
             for (Entry entry : entryCursor) {
-                // Prevents adding the searched DN
-                // if (getConfig().getDn().equalsIgnoreCase(entry.getDn().getName()))
-                // continue;
-                getTarget().addEntry(entry);
+                getTarget().addEntry(entry, config.getLoadStrategy());
             }
         } catch (LdapException e) {
             logger.error("Error processing ldap source:", e);
