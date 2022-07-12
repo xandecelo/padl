@@ -77,7 +77,8 @@ public class DatabaseSource extends PadlSource {
         try {
 
             LdapNetworkConnection conn = target.getConnection();
-            List<String> ldapAttributesToConfigure = new LinkedList<String>(databaseColumnMapping.values());
+            Set<String> ldapAttributesToConfigure = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+            ldapAttributesToConfigure.addAll(databaseColumnMapping.values());
             removeConfiguredAttributes(conn, ldapAttributesToConfigure);
             if (ldapAttributesToConfigure.size() > 0) {
                 Entry entry = new DefaultEntry(String.format("cn=%s,cn=schema,cn=config",
@@ -106,7 +107,6 @@ public class DatabaseSource extends PadlSource {
 
                         // IMPROVEMENT: create non-single-valued attributes.
                         attributeType.setSingleValued(true);
-
                         attributeType.setSyntax(new LdapSyntax(SYNTAX_OID));
 
                         // Remember attributes already created
