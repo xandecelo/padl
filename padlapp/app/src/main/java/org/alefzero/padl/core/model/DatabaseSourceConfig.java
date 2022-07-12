@@ -20,8 +20,8 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
     private String query;
     private String uid;
     private String ldapType;
-    private Set<String> datamap;
-    private Set<String> objectClasses;
+    private Set<String> datamap = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    private Set<String> objectClasses = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
     public String getJdbcUrl() {
         return jdbcUrl;
@@ -69,7 +69,10 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
     }
 
     public void setObjectClasses(Set<String> objectClasses) {
-        this.objectClasses = objectClasses;
+        this.objectClasses = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        if (objectClasses != null) {
+            this.objectClasses.addAll(objectClasses);
+        }
     }
 
     public String getUid() {
@@ -90,8 +93,9 @@ public class DatabaseSourceConfig extends PadlSourceConfig {
 
     @Override
     public String toString() {
-        return "DatabaseSourceConfig [datamap=" + datamap + ", dbPassword=*****, dbUsername=" + dbUsername
-                + ", jdbcUrl=" + jdbcUrl + ", objectClasses=" + objectClasses + ", query=" + query + "]";
+        return "DatabaseSourceConfig [datamap=" + datamap + ", dbPassword=" + "******" + ", dbUsername=" + dbUsername
+                + ", jdbcUrl=" + jdbcUrl + ", ldapType=" + ldapType + ", objectClasses=" + objectClasses + ", query="
+                + query + ", uid=" + uid + "] for " + super.toString();
     }
 
 }

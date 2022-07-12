@@ -23,10 +23,12 @@ public abstract class PadlSourceConfig {
     public static final String LOAD_STRATEGY_MERGE = "merge";
     public static final String LOAD_STRATEGY_REPLACE = "replace";
     public static final String LOAD_STRATEGY_IGNORE = "ignore";
+    // TODO: fix lowercase/uppercase misshandle
+    public static final String LOAD_STRATEGY_ADD_ATTRIBUTE = "addattribute";
 
     private String id;
     private String dn;
-    private String loadStrategy = LOAD_STRATEGY_MERGE;
+    private String loadStrategy;
 
     public abstract String getType();
 
@@ -47,6 +49,7 @@ public abstract class PadlSourceConfig {
     }
 
     public String getLoadStrategy() {
+        loadStrategy = loadStrategy != null ? loadStrategy.toLowerCase() : LOAD_STRATEGY_MERGE;
         return loadStrategy;
     }
 
@@ -56,6 +59,7 @@ public abstract class PadlSourceConfig {
             case LOAD_STRATEGY_IGNORE:
             case LOAD_STRATEGY_MERGE:
             case LOAD_STRATEGY_REPLACE:
+            case LOAD_STRATEGY_ADD_ATTRIBUTE:
                 break;
             default:
                 logger.warn("Source load strategy [{}] is invalid. Using loadStrategy=merge as default.");

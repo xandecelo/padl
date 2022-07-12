@@ -11,6 +11,9 @@ import org.alefzero.padl.core.exceptions.PadlException;
 import org.alefzero.padl.core.model.PadlConfig;
 import org.alefzero.padl.core.model.PadlSourceConfig;
 import org.alefzero.padl.utils.LdapUtils;
+import org.apache.directory.api.ldap.codec.api.LdapApiService;
+import org.apache.directory.api.ldap.codec.api.LdapApiServiceFactory;
+import org.apache.directory.api.ldap.extras.extended.pwdModify.PasswordModifyRequest;
 import org.apache.directory.api.ldap.model.entry.Attribute;
 import org.apache.directory.api.ldap.model.entry.DefaultModification;
 import org.apache.directory.api.ldap.model.entry.Entry;
@@ -19,6 +22,8 @@ import org.apache.directory.api.ldap.model.entry.ModificationOperation;
 import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsException;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.exception.LdapNoSuchAttributeException;
+import org.apache.directory.api.ldap.model.exception.LdapSchemaViolationException;
+import org.apache.directory.api.util.Strings;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +90,7 @@ public abstract class PadlTarget implements GenericService {
         try {
             // try to add, dont matter strategy
             getConnection().add(sourceEntry);
-        } catch (LdapEntryAlreadyExistsException entryExistsException) {
+        } catch (LdapSchemaViolationException | LdapEntryAlreadyExistsException entryExistsException) {
             // entry exists, so try one of strategies
             try {
 
@@ -103,34 +108,15 @@ public abstract class PadlTarget implements GenericService {
                             processedDNs.add(sourceEntry.getDn().toString());
                             break;
                         }
-                        // Merge strategy is the default.
+                    case PadlSourceConfig.LOAD_STRATEGY_ADD_ATTRIBUTE:
+                        processingAttributeName = addAttributesFrom(sourceEntry);
+                        break;
+                    // Merge strategy is the default.
                     case PadlSourceConfig.LOAD_STRATEGY_MERGE:
                     default:
-                        List<Modification> mods = new LinkedList<Modification>();
-                        for (Attribute sourceAttribute : sourceEntry.getAttributes()) {
-                            processingAttributeName = sourceAttribute.getId();
-                            boolean addThisAttribute = false;
-                            try {
-                                addThisAttribute = getConnection().compare(sourceEntry.getDn(), sourceAttribute.getId(),
-                                        sourceAttribute.get());
-
-                            } catch (LdapNoSuchAttributeException processingException) {
-                                // DO NOTHING. Attribute was not found at target entry and addThisAttribute is
-                                // already false;
-                            }
-                            if (!addThisAttribute) {
-                                // Default 'modification mode' is to add. Since custom attributes are
-                                // single-value, change to replace
-
-                                Modification modification = new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
-                                        sourceAttribute.getId(), sourceAttribute.get());
-                                mods.add(modification);
-                            }
-                        }
-                        if (!mods.isEmpty()) {
-                            getConnection().modify(sourceEntry.getDn(), mods.toArray(new Modification[0]));
-                        }
+                        processingAttributeName = mergeAttributesFrom(sourceEntry);
                 }
+
             } catch (LdapNoSuchAttributeException e) {
                 logger.error("Error processing attribute: {} for entry {}.", processingAttributeName,
                         sourceEntry, e);
@@ -145,6 +131,58 @@ public abstract class PadlTarget implements GenericService {
                     sourceEntry, ldapException);
             throw new PadlException(ldapException);
         }
+    }
+
+    private String addAttributesFrom(Entry sourceEntry) throws LdapException {
+        String processingAttributeName = null;
+        if (getConnection().exists(sourceEntry.getDn())) {
+            for (Attribute sourceAttribute : sourceEntry.getAttributes()) {
+                if (!"objectClass".equalsIgnoreCase(sourceAttribute.getId())) {
+                    // TODO implement algorhythm specific for userpassword.
+                    processingAttributeName = sourceAttribute.getId();
+                    Modification mod = new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
+                            processingAttributeName,
+                            "{SHA}" + sourceAttribute.get().toString());
+                    getConnection().modify(sourceEntry.getDn(), mod);
+
+                }
+            }
+        }
+
+        // else {
+        // logger.warn("DN {} not found at target schema to add attributes.",
+        // sourceEntry.getDn());
+        // }
+        return processingAttributeName;
+    }
+
+    private String mergeAttributesFrom(Entry sourceEntry) throws LdapException {
+        String processingAttributeName = null;
+        List<Modification> mods = new LinkedList<Modification>();
+        for (Attribute sourceAttribute : sourceEntry.getAttributes()) {
+            processingAttributeName = sourceAttribute.getId();
+            boolean addThisAttribute = false;
+            try {
+                addThisAttribute = getConnection().compare(sourceEntry.getDn(), sourceAttribute.getId(),
+                        sourceAttribute.get());
+
+            } catch (LdapNoSuchAttributeException processingException) {
+                // DO NOTHING. Attribute was not found at target entry and addThisAttribute is
+                // already false;
+            }
+            if (!addThisAttribute) {
+                // Default 'modification mode' is to add. Since custom attributes are
+                // single-value, change to replace
+
+                Modification modification = new DefaultModification(ModificationOperation.ADD_ATTRIBUTE,
+                        sourceAttribute.getId(), sourceAttribute.get());
+                mods.add(modification);
+            }
+        }
+        if (!mods.isEmpty()) {
+            getConnection().modify(sourceEntry.getDn(), mods.toArray(new Modification[0]));
+        }
+        return processingAttributeName;
     }
 
     protected abstract String getRootCN();

@@ -185,7 +185,8 @@ public class DatabaseSource extends PadlSource {
             // uniqueMember)
             DBMetadataModel uidCol = findUidCol(collumns);
             collumns.remove(uidCol);
-            Set<String> objClassesToAdd = new TreeSet<String>(config.getObjectClasses());
+            Set<String> objClassesToAdd = new TreeSet<String>();
+            objClassesToAdd.addAll(config.getObjectClasses());
 
             if (customObjClass != null) {
                 objClassesToAdd.add(customObjClass);
@@ -199,7 +200,7 @@ public class DatabaseSource extends PadlSource {
                     for (DBMetadataModel col : collumns) {
 
                         if (rs.getObject(col.getColumnName()) == null) {
-                            logger.error("Found a null value for a specified collumn ({}). Ignoring attribute...",
+                            logger.trace("Found a null value for a specified collumn ({}). Ignoring attribute...",
                                     col.getColumnName());
                             continue;
                         }
