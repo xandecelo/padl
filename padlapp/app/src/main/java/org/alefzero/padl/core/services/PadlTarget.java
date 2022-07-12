@@ -11,9 +11,6 @@ import org.alefzero.padl.core.exceptions.PadlException;
 import org.alefzero.padl.core.model.PadlConfig;
 import org.alefzero.padl.core.model.PadlSourceConfig;
 import org.alefzero.padl.utils.LdapUtils;
-import org.apache.directory.api.ldap.codec.api.LdapApiService;
-import org.apache.directory.api.ldap.codec.api.LdapApiServiceFactory;
-import org.apache.directory.api.ldap.extras.extended.pwdModify.PasswordModifyRequest;
 import org.apache.directory.api.ldap.model.entry.Attribute;
 import org.apache.directory.api.ldap.model.entry.DefaultModification;
 import org.apache.directory.api.ldap.model.entry.Entry;
@@ -23,7 +20,6 @@ import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsExcep
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.exception.LdapNoSuchAttributeException;
 import org.apache.directory.api.ldap.model.exception.LdapSchemaViolationException;
-import org.apache.directory.api.util.Strings;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
