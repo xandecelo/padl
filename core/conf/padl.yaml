@@ -1,0 +1,7 @@
+# App configuration
+general:
+  lang: pt_BR
+  instance_name: instance1
+  root_dn: dc=example,dc=org
+  admin_password: admin
+  
