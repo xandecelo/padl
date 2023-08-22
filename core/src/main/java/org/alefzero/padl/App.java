@@ -31,13 +31,13 @@ public class App {
 	private ScheduledFuture<?> executor = null;
 
 	private void startAction(String action, String configurationFilename) {
-		logger.trace(".run [action: {}, configurationFilename: {}]", action, configurationFilename);
+		logger.trace(".startAction [action: {}, configurationFilename: {}]", action, configurationFilename);
 		try {
-
 			Path configurationFile = Paths.get(configurationFilename);
 			switch (action.toLowerCase()) {
 			case "config":
 				getConfigurationFor(configurationFile);
+				break;
 			case "run":
 				runSyncProcess(configurationFile);
 				break;
@@ -48,9 +48,9 @@ public class App {
 			}
 			System.exit(0);
 		} catch (IOException e) {
-			System.exit(1);
-			logger.error("Error: ", e);
+			logger.error("Error processing action {}: ", action.toLowerCase(), e);
 			e.printStackTrace();
+			System.exit(1);
 		}
 	}
 
