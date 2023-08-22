@@ -1,7 +1,19 @@
 #!/bin/bash
-
 service slapd start
 
-echo "PADL LDAP is running. Press Control+C to stop."
+change_root_pwd() {
+    echo "Changing root passwd"
+    sleep 1
+    local password=$(slappasswd -h {SSHA} -s admin)
+    padl/bin/padl config | sed "s|%%LDAP_ROOT_PASSWORD%%|$password|" | ldapmodify -Y EXTERNAL -H ldapi:/// -a 
+}
 
-read -r -d '' _ </dev/tty
+change_root_pwd
+
+echo "PADL LDAP is running. Press [q] and Enter to to quit."
+
+while true; do IFS= read -d '' -n 1 ; [ "${REPLY,,}" = "q" ] && break; done
+
+service slapd stop
+
+echo  "PDAL is shutdown"

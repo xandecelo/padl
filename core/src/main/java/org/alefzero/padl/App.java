@@ -4,12 +4,12 @@
 package org.alefzero.padl;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.ScheduledFuture;
 
+import org.alefzero.padl.config.PadlConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -64,7 +64,8 @@ public class App {
 	}
 
 	private void getConfigurationFor(Path configurationFile) throws IOException {
-		System.out.println(Files.readString(configurationFile));
+		PadlConfig config = new PadlConfig(configurationFile);
+		System.out.println(config.getTargetAdminConfig());
 	}
 
 	private void help() {

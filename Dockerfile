@@ -1,4 +1,4 @@
-from ubuntu:22.04 as ldap_source_config
+from docker.io/library/ubuntu:22.04 as ldap_source_config
 env SOURCE_DIR="/opt/source"
 run mkdir -p ${SOURCE_DIR}
 # Enable ubuntu source code to be downloaded and compiled
@@ -16,9 +16,16 @@ run apt-get -y build-dep slapd
 run echo '--enable-sql --enable-ldap ' >> debian/configure.options
 run debuild --no-lintian -i -us -uc -b 
 
-from ubuntu:22.04
+
+from docker.io/library/gradle:jdk17-focal as build
+env SOURCE_DIR="/opt/source"
+add core "$SOURCE_DIR"/core
+WORKDIR "$SOURCE_DIR"/core
+RUN ./gradlew distTar
+
+from docker.io/library/eclipse-temurin:17-jre-jammy
 expose 389
-env APP_DIR="/opt/padl"
+env APP_DIR="/opt/app"
 env SOURCE_DIR="/opt/source"
 run echo 'APT::Keep-Downloaded-Packages "false";' > /etc/apt/apt.conf.d/00-disable-cache
 run apt-get update && apt-get install -y psmisc mariadb-server unixodbc odbcinst odbc-mariadb
@@ -30,5 +37,7 @@ run DEBIAN_FRONTEND="noninteractive" dpkg -i *.deb
 run mkdir -p ${APP_DIR}
 workdir ${APP_DIR}
 add bin bin
+copy --from=build "$SOURCE_DIR"/core/build/distributions/padl.tar ${APP_DIR}
+run tar xvf "${APP_DIR}"/padl.tar && rm padl.tar
 entrypoint [ "/bin/bash", "-c" ]
 cmd [ "source ./bin/run.sh" ]
