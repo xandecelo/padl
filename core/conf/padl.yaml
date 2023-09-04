@@ -1,7 +1,59 @@
 # App configuration
 general:
   lang: pt_BR
-  instance_name: instance1
-  root_dn: dc=example,dc=org
-  admin_password: admin
+  instanceId: instance1
+  rootDn: dc=example,dc=org
+  adminPassword: admin
+sources:
+- id: ldap1
+  type: proxy
+  suffix: dc=example,dc=org
+  targetURI: "ldap://dev.local:10389"
+  aclBind: binddn="cn=admin,dc=test,dc=com" credentials="admin"
+- id: sql_users
+  suffix: ou=users,dc=example,dc=org
+  dnFormat: uid=%s
+  type: sql
+  query: select username, concat(first_name, ' ', surname) as full_name, first_name, surname, phone from users
+  idColumn: username
+  attributes:
+  - givenName=first_name
+  - sn=surname
+  - cn=full_name
+  - telephoneNumber=phone
+  joinData:
+  - id: data1
+    query: >- 
+        select c.username, a.groupname 
+        from groups a 
+            inner join group_users b
+            on a.groupid = b.groupid
+            inner join users c
+            on b.username = c.username
+    idJoinColumnFilter: username  
+    attributes:
+    - memberOf=groupname
+  objectClasses: 
+  - inetOrgPerson
+- id: sql_groups
+  suffix: ou=groups,dc=example,dc=org
+  dnFormat: cn=%s
+  type: sql
+  query: select group_name from groups
+  idColumn: group_name
+  attributes:
+  joinData:
+  - id: data2
+    query: >- 
+        select c.username, a.groupname 
+        from groups a 
+            inner join group_users b
+            on a.groupid = b.groupid
+            inner join users c
+            on b.username = c.username
+    idJoinColumnFilter: groupname  
+    attributes:
+    - member=username
+  objectClasses: 
+  - groupOfNames
   

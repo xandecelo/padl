@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.ScheduledFuture;
 
-import org.alefzero.padl.config.PadlConfig;
+import org.alefzero.padl.config.PadlConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,8 +35,8 @@ public class App {
 		try {
 			Path configurationFile = Paths.get(configurationFilename);
 			switch (action.toLowerCase()) {
-			case "config":
-				getConfigurationFor(configurationFile);
+			case "admin-config":
+				getAdminConfiguration(configurationFile);
 				break;
 			case "run":
 				runSyncProcess(configurationFile);
@@ -63,8 +63,8 @@ public class App {
 		return configurationFilename;
 	}
 
-	private void getConfigurationFor(Path configurationFile) throws IOException {
-		PadlConfig config = new PadlConfig(configurationFile);
+	private void getAdminConfiguration(Path configurationFile) throws IOException {
+		PadlConfigurator config = new PadlConfigurator(configurationFile);
 		System.out.println(config.getTargetAdminConfig());
 	}
 
@@ -74,7 +74,15 @@ public class App {
 
 
 				Padl - an easy proxy ldap configurator.
-				Usage: run.sh config|help|run
+				Usage: run.sh admin-config|help|run
+
+				""");
+		
+		System.out.println("""
+
+
+				Padl - an easy proxy ldap configurator.
+				Usage: run.sh admin-config|help|run
 
 				""");
 	}

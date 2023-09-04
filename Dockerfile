@@ -36,8 +36,9 @@ copy --from=ldap_source_config "${SOURCE_DIR}/*.deb" "${SOURCE_DIR}"
 run DEBIAN_FRONTEND="noninteractive" dpkg -i *.deb   
 run mkdir -p ${APP_DIR}
 workdir ${APP_DIR}
-add bin bin
 copy --from=build "$SOURCE_DIR"/core/build/distributions/padl.tar ${APP_DIR}
 run tar xvf "${APP_DIR}"/padl.tar && rm padl.tar
+add bin bin
+add core/conf padl/conf
 entrypoint [ "/bin/bash", "-c" ]
 cmd [ "source ./bin/run.sh" ]

@@ -16,6 +16,10 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-jcl:2.20.0'
     implementation 'commons-logging:commons-logging:1.2'
 
+    // Jackson YAML processor
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.14.2'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
+
     // Unit test libraries
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
