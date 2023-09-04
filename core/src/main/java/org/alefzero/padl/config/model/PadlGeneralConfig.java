@@ -51,8 +51,9 @@ public class PadlGeneralConfig {
 		return this;
 	}
 
-	public List<PadlSourceConfig> getSources() {
+	public List<PadlSourceConfig> getSourcesInConfigurationOrder() {
 		if (!sourcesSorted) {
+			sources.forEach(source -> source.setRootDN(source.getRootDN() == null ? this.getRootDn() : source.getRootDN()));
 			Collections.sort(sources);
 			sourcesSorted = true;
 		}

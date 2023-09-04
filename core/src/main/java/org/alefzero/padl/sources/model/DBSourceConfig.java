@@ -115,4 +115,9 @@ public class DBSourceConfig extends PadlSourceConfig {
 
 	}
 
+	@Override
+	public String getConfigurationLDIF() {
+		return "\n# Should be a DB config (" + this.getId() + ")\n";
+	}
+
 }

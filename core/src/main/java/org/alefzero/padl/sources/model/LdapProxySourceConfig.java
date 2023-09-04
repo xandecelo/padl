@@ -28,4 +28,15 @@ public class LdapProxySourceConfig extends PadlSourceConfig {
 		return "LdapProxySourceConfig [targetURI=" + targetURI + ", aclBind=" + aclBind + "]";
 	}
 
+	@Override
+	public String getConfigurationLDIF() {
+		StringBuffer sb = new StringBuffer();
+		return sb.append("# Ldap proxy configuration (").append(this.getId())
+				.append(")\ndn: olcDatabase=ldap,cn=config").append("\nobjectClass: olcDatabaseConfig")
+				.append("\nobjectClass: olcLDAPConfig").append("\nolcDatabase: ldap").append("\nolcRootDN: ")
+				.append(super.getRootDN()).append("\nolcSuffix:").append(super.getSuffix()).append("\nolcDbURI: ")
+				.append(this.getTargetURI()).append("\nolcDbACLBind: ").append(this.getAclBind()).append("\n")
+				.toString();
+	}
+
 }

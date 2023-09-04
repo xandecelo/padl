@@ -52,18 +52,19 @@ public class PadlConfigurator {
 	}
 
 	public String getLdapDatabaseConfig() {
+		StringBuffer sb = new StringBuffer();
 		try {
-			loadYamlData();
+			loadYAMLData();
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new IllegalStateException("There's a problem with the configuration file.");
 		}
-		// get all configs
+		generalConfig.getSourcesInConfigurationOrder().forEach(item -> sb.append(item.getConfigurationLDIF()));
 		// check if root DN is present
 		// true - insert delete default mdb configuration
 		// set passwd to rootdn
 
-		return generalConfig.toString();
+		return sb.toString();
 	}
 
 	public String getLdifConfigurationForLdap() {
@@ -78,14 +79,14 @@ public class PadlConfigurator {
 
 	}
 
-	private void loadYamlData() throws IOException {
+	private void loadYAMLData() throws IOException {
 		ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 		JsonNode rootTree = mapper.readTree(configurationFile.toFile());
 		generalConfig = mapper.treeToValue(rootTree.get("general"), PadlGeneralConfig.class);
-		generalConfig.setSources(getAllSources(mapper, rootTree.get("sources")));
+		generalConfig.setSources(readAllSourcesFromYAML(mapper, rootTree.get("sources")));
 	}
 
-	private List<PadlSourceConfig> getAllSources(ObjectMapper mapper, JsonNode sourcesNode)
+	private List<PadlSourceConfig> readAllSourcesFromYAML(ObjectMapper mapper, JsonNode sourcesNode)
 			throws JsonProcessingException, IllegalArgumentException {
 		List<PadlSourceConfig> sources = new LinkedList<PadlSourceConfig>();
 		for (JsonNode sourceNode : sourcesNode) {
@@ -121,4 +122,5 @@ public class PadlConfigurator {
 		});
 		logger.trace(".loadAllSourceFactoriesTypes. [return]");
 	}
+
 }

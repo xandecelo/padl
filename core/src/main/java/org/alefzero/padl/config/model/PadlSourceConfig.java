@@ -2,12 +2,23 @@ package org.alefzero.padl.config.model;
 
 import java.util.Objects;
 
-public class PadlSourceConfig implements Comparable<PadlSourceConfig> {
+public abstract class PadlSourceConfig implements Comparable<PadlSourceConfig> {
+
+	public abstract String getConfigurationLDIF();
 
 	private String id;
 	private String type;
 	private String suffix;
 	private String reversedSuffix;
+	private String rootDN;
+
+	public String getRootDN() {
+		return rootDN;
+	}
+
+	public void setRootDN(String rootDN) {
+		this.rootDN = rootDN;
+	}
 
 	public String getId() {
 		return id;
