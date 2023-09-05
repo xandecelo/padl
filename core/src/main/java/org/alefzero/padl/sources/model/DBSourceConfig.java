@@ -7,12 +7,58 @@ import org.alefzero.padl.config.model.PadlSourceConfig;
 
 public class DBSourceConfig extends PadlSourceConfig {
 
+	private String dbName;
+	private String dbUser;
+	private String dbPass;
+	private String subtreeCond = "\"ldap_entries.dn LIKE CONCAT('%',?)\"";
+	private String insertEntryStatement = "\"insert into ldap_entries (dn,oc_map_id,parent,keyval) values (?,?,?,?)\"";
+
 	private String dnFormat;
 	private String query;
 	private String idColumn;
 	private String[] attributes;
 	private List<JoinData> joinData;
 	private List<String> objectClasses;
+
+	public String getDbName() {
+		return dbName;
+	}
+
+	public void setDbName(String dbName) {
+		this.dbName = dbName;
+	}
+
+	public String getDbUser() {
+		return dbUser;
+	}
+
+	public void setDbUser(String dbUser) {
+		this.dbUser = dbUser;
+	}
+
+	public String getDbPass() {
+		return dbPass;
+	}
+
+	public void setDbPass(String dbPass) {
+		this.dbPass = dbPass;
+	}
+
+	public String getSubtreeCond() {
+		return subtreeCond;
+	}
+
+	public void setSubtreeCond(String subtreeCond) {
+		this.subtreeCond = subtreeCond;
+	}
+
+	public String getInsertEntryStatement() {
+		return insertEntryStatement;
+	}
+
+	public void setInsertEntryStatement(String insertEntryStatement) {
+		this.insertEntryStatement = insertEntryStatement;
+	}
 
 	public String getDnFormat() {
 		return dnFormat;
@@ -117,7 +163,23 @@ public class DBSourceConfig extends PadlSourceConfig {
 
 	@Override
 	public String getConfigurationLDIF() {
-		return "\n# Should be a DB config (" + this.getId() + ")\n";
+
+		StringBuffer sb = new StringBuffer();
+		sb.append("\n\n# Back-sql ldap configuration (").append(this.getId()).append(")");
+		sb.append("\ndn: olcDatabase=sql,cn=config");
+		sb.append("\nchangetype: add");
+		sb.append("\nobjectClass: olcDatabaseConfig");
+		sb.append("\nobjectClass: olcSqlConfig");
+		sb.append("\nolcDatabase: sql");
+		sb.append("\nolcSuffix:").append(this.getSuffix());
+		sb.append("\nolcRootDN: ").append(this.getRootDN());
+		sb.append("\nolcDbName:").append(this.getDbName());
+		sb.append("\nolcDbUser:").append(this.getDbUser());
+		sb.append("\nolcDbPass:").append(this.getDbPass());
+		sb.append("\nolcSqlSubtreeCond:").append(this.getSubtreeCond());
+		sb.append("\nolcSqlInsEntryStmt:").append(this.getInsertEntryStatement());
+
+		return sb.toString();
 	}
 
 }
