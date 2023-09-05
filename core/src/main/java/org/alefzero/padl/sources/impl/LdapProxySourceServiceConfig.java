@@ -1,8 +1,8 @@
 package org.alefzero.padl.sources.impl;
 
-import org.alefzero.padl.sources.PadlSourceServiceConfig;
+import org.alefzero.padl.sources.PadlSourceConfiguration;
 
-public class LdapProxySourceServiceConfig extends PadlSourceServiceConfig {
+public class LdapProxySourceServiceConfig extends PadlSourceConfiguration {
 
 	private String targetURI;
 	private String aclBind;

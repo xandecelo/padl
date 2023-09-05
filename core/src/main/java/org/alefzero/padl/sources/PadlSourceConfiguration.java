@@ -2,7 +2,7 @@ package org.alefzero.padl.sources;
 
 import java.util.Objects;
 
-public abstract class PadlSourceServiceConfig implements Comparable<PadlSourceServiceConfig> {
+public abstract class PadlSourceConfiguration implements Comparable<PadlSourceConfiguration> {
 
 	private PadlSourceFactory factory = null;
 	
@@ -59,7 +59,7 @@ public abstract class PadlSourceServiceConfig implements Comparable<PadlSourceSe
 		this.enabled = enabled;
 	}
 
-	public PadlSourceServiceConfig setSuffix(String suffix) {
+	public PadlSourceConfiguration setSuffix(String suffix) {
 		Objects.requireNonNull(suffix);
 		this.suffix = suffix;
 		this.reversedSuffix = new StringBuffer(suffix).reverse().toString();
@@ -77,7 +77,7 @@ public abstract class PadlSourceServiceConfig implements Comparable<PadlSourceSe
 	protected abstract boolean hasOSPrerequirementScript();
 
 	@Override
-	public final int compareTo(PadlSourceServiceConfig o) {
+	public final int compareTo(PadlSourceConfiguration o) {
 		Objects.requireNonNull(suffix, "All configuration sources must have a suffix.");
 		Objects.requireNonNull(o.suffix, "All configuration sources must have a suffix.");
 		Objects.requireNonNull(o, "Source configuration object cannot be null");

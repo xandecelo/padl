@@ -1,12 +1,11 @@
 package org.alefzero.padl.sources.impl;
 
-import org.alefzero.padl.sources.PadlSourceFactorySetup;
 import org.alefzero.padl.sources.PadlSourceFactory;
-import org.alefzero.padl.sources.PadlSourceService;
+import org.alefzero.padl.sources.PadlSourceParameters;
 
 public class LdapProxySourceFactory extends PadlSourceFactory {
 
-	private LdapProxySourceFactorySetup factorySetup;
+	private LdapProxySourceFactorySetup sourceParameters;
 
 	@Override
 	public String getServiceType() {
@@ -15,25 +14,26 @@ public class LdapProxySourceFactory extends PadlSourceFactory {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Class<LdapProxySourceServiceConfig> getServiceConfigType() {
+	public Class<LdapProxySourceServiceConfig> getSourceConfigType() {
 		return LdapProxySourceServiceConfig.class;
 	}
 
 	@Override
-	public <T extends PadlSourceService> Class<T> getService() {
-		return null;
+	@SuppressWarnings("unchecked")
+	public LdapProxySourceService getService() {
+		return new LdapProxySourceService();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Class<LdapProxySourceFactorySetup> getSourceFactorySetupClass() {
-		return LdapProxySourceFactorySetup.class;
+	public LdapProxySourceFactorySetup getSourceParameters() {
+		return this.sourceParameters;
 	}
 
 	@Override
-	public void setFactorySetup(PadlSourceFactorySetup factorySetup) {
+	public void setSourceParameters(PadlSourceParameters factorySetup) {
 		if (factorySetup instanceof LdapProxySourceFactorySetup) {
-			this.factorySetup = (LdapProxySourceFactorySetup) factorySetup;
+			this.sourceParameters = (LdapProxySourceFactorySetup) factorySetup;
 		} else {
 			throw new IllegalArgumentException("Can't convert setup class" + factorySetup.getClass().getName() + " to "
 					+ LdapProxySourceFactorySetup.class.getName());
@@ -41,9 +41,10 @@ public class LdapProxySourceFactory extends PadlSourceFactory {
 	}
 
 	@Override
-	public <T extends PadlSourceFactorySetup> T getFactorySetup() {
+	public <T extends PadlSourceParameters> Class<T> getSourceParameterClassType() {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 
 }

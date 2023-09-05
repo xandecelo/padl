@@ -1,6 +1,6 @@
 package org.alefzero.padl.sources;
 
-public abstract class PadlSourceFactorySetup {
+public abstract class PadlSourceParameters {
 
 	private String type;
 

@@ -3,9 +3,9 @@ package org.alefzero.padl.sources.impl;
 import java.util.Arrays;
 import java.util.List;
 
-import org.alefzero.padl.sources.PadlSourceServiceConfig;
+import org.alefzero.padl.sources.PadlSourceConfiguration;
 
-public class DBSourceConfig extends PadlSourceServiceConfig {
+public class DBSourceConfig extends PadlSourceConfiguration {
 
 	private String sourceJdbcURL;
 	private String sourceUsername;

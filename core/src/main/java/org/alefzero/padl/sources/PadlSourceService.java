@@ -1,15 +1,27 @@
 package org.alefzero.padl.sources;
 
-public interface PadlSourceService {
-	
-	public <T extends PadlSourceServiceConfig> T setConfig(T config);
-	
-	public <T extends PadlSourceFactorySetup> T setFactory(T setup);
-	
-	public void prepare();
-	
-	public void sync();
-	
-	public void end();
-	
+public abstract class PadlSourceService {
+
+	private PadlSourceConfiguration config;
+
+	private PadlSourceParameters sourceParameters;
+
+	public abstract void sync();
+
+	public PadlSourceConfiguration getConfig() {
+		return config;
+	}
+
+	public void setConfig(PadlSourceConfiguration config) {
+		this.config = config;
+	}
+
+	public PadlSourceParameters getSourceParameters() {
+		return sourceParameters;
+	}
+
+	public void setSourceParameters(PadlSourceParameters sourceParameters) {
+		this.sourceParameters = sourceParameters;
+	}
+
 }

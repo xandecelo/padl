@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.ScheduledFuture;
 
-import org.alefzero.padl.config.PadlInstance;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,25 +32,27 @@ public class App {
 		logger.trace(".startAction [action: {}, configurationFilename: {}]", action, configurationFilename);
 		try {
 			Path configurationFile = Paths.get(configurationFilename);
-			PadlInstance instance = new PadlInstance(configurationFile);
+			PadlInstance instance = new PadlInstance();
+			instance.loadConfiguration(configurationFile);
 			switch (action.toLowerCase()) {
 			case "check-yaml":
-				checkYAML(instance);
+				instance.checkYAML();
 				break;
 			case "get-os-variables":
-				getGlobalOSVariables(instance);
+				instance.getGlobalOSVariables();
 				break;
 			case "check-connectivity":
-				checkConnectivity(instance);
+				instance.checkConnectivity();
 				break;
 			case "ldap-setup":
-				getAdminConfiguration(instance);
+				instance.getLDIFSetupConfiguration();
+				
 				break;
 			case "source-os-config-list":
-				getSourceOSScriptList(instance);
+				instance.getSourceOSScriptList();
 				break;
 			case "source-env-config":
-				getSourceOSEnv(instance, sourceType);
+				instance.getSourceOSEnv(sourceType);
 				break;
 			case "sync":
 				runSyncProcess(instance);
@@ -69,24 +70,6 @@ public class App {
 		}
 	}
 
-	private void getGlobalOSVariables(PadlInstance instance) {
-		System.out.print(instance.getGlobalOSVariables());
-		
-	}
-
-	private void checkConnectivity(PadlInstance instance) throws IOException {
-		instance.checkConnectivity();
-
-	}
-
-	private void checkYAML(PadlInstance instance) throws IOException {
-		instance.checkYAML();
-	}
-
-	private void getSourceOSEnv(PadlInstance instance, String sourceType) throws IOException {
-		System.out.println(instance.getSourceOSEnvFor(sourceType));
-	}
-
 	public static String getConfigurationFilename(String[] args) {
 		logger.trace(".getConfigurationFilename [args: {}]", Arrays.toString(args));
 		String configurationFilename = args.length > 0 ? args[0] : "";
@@ -94,14 +77,6 @@ public class App {
 				: configurationFilename;
 		logger.trace(".getConfigurationFilename [return: {}]", configurationFilename);
 		return configurationFilename;
-	}
-
-	private void getAdminConfiguration(PadlInstance instance) throws IOException {
-		System.out.println(instance.getLdapAdminConfig());
-	}
-
-	private void getSourceOSScriptList(PadlInstance instance) throws IOException {
-		System.out.println(instance.getSourceOsConfig());
 	}
 
 	private void help() {

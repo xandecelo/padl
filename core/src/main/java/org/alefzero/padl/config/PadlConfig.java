@@ -4,11 +4,11 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.alefzero.padl.sources.PadlSourceServiceConfig;
+import org.alefzero.padl.sources.PadlSourceConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class PadlGeneralConfig {
+public class PadlConfig {
 
 	protected static final Logger logger = LogManager.getLogger();
 
@@ -18,13 +18,13 @@ public class PadlGeneralConfig {
 	private String lang;
 	private String suffix;
 	private String adminPassword;
-	private List<PadlSourceServiceConfig> sources = new LinkedList<PadlSourceServiceConfig>();
+	private List<PadlSourceConfiguration> sources = new LinkedList<PadlSourceConfiguration>();
 
 	public String getInstanceId() {
 		return instanceId;
 	}
 
-	public PadlGeneralConfig setInstanceId(String instanceId) {
+	public PadlConfig setInstanceId(String instanceId) {
 		this.instanceId = instanceId;
 		return this;
 	}
@@ -33,7 +33,7 @@ public class PadlGeneralConfig {
 		return lang;
 	}
 
-	public PadlGeneralConfig setLang(String lang) {
+	public PadlConfig setLang(String lang) {
 		this.lang = lang;
 		return this;
 	}
@@ -42,7 +42,7 @@ public class PadlGeneralConfig {
 		return suffix;
 	}
 
-	public PadlGeneralConfig setSuffix(String suffix) {
+	public PadlConfig setSuffix(String suffix) {
 		this.suffix = suffix;
 		return this;
 
@@ -52,24 +52,26 @@ public class PadlGeneralConfig {
 		return adminPassword;
 	}
 
-	public PadlGeneralConfig setAdminPassword(String adminPassword) {
+	public PadlConfig setAdminPassword(String adminPassword) {
 		this.adminPassword = adminPassword;
 		return this;
 	}
 
-	public List<PadlSourceServiceConfig> getSources() {
+	public List<PadlSourceConfiguration> getSources() {
 		return sources;
 	}
 
-	public PadlGeneralConfig setSources(List<PadlSourceServiceConfig> sources) {
+	public PadlConfig setSources(List<PadlSourceConfiguration> sources) {
 		this.sources = sources;
 		return this;
 	}
 
-	public String getLDIFConfiguration() {
+	public String getLDIFSetupConfiguration() {
 		StringBuffer sb = new StringBuffer();
+		sb.append(getRootDNPasswordChange());
+		sb.append("\n\n");
 
-		sb.append(deleteDefaultPassword());
+		sb.append(getDeleteDefaultPassword());
 		sb.append("\n\n");
 
 		sb.append(getDeleteDefaultMdbLDIF());
@@ -77,7 +79,7 @@ public class PadlGeneralConfig {
 
 		boolean addDefaultMdbBack = true;
 
-		for (PadlSourceServiceConfig source : this.getSourcesInConfigurationOrder()) {
+		for (PadlSourceConfiguration source : this.getSourcesInConfigurationOrder()) {
 			logger.trace("Processing source [{}, {}] to configuration LDIF", source.getId(), source.getType());
 			if (this.getSuffix().equalsIgnoreCase(source.getSuffix())) {
 				sb.append("\n").append(source.getConfigurationLDIF().trim());
@@ -98,7 +100,16 @@ public class PadlGeneralConfig {
 		return sb.toString();
 	}
 
-	private String deleteDefaultPassword() {
+	public String getRootDNPasswordChange() {
+		StringBuffer sb = new StringBuffer().append("# Change cn=admin,cn=config password");
+		sb.append("\ndn: olcDatabase={0}config,cn=config");
+		sb.append("\nchangetype: modify");
+		sb.append("\nreplace: olcRootPW");
+		sb.append("\nolcRootPW: %%LDAP_ROOT_PASSWORD%%");
+		return sb.toString();
+	}
+
+	private String getDeleteDefaultPassword() {
 		return """
 				# Delete default password of this ldap
 				dn: olcDatabase={1}mdb,cn=config
@@ -142,10 +153,10 @@ public class PadlGeneralConfig {
 				""";
 	}
 
-	private List<PadlSourceServiceConfig> getSourcesInConfigurationOrder() {
+	public List<PadlSourceConfiguration> getSourcesInConfigurationOrder() {
 		if (!sourcesSorted) {
-			sources.forEach(
-					source -> source.setRootDN(source.getRootDN() == null ? this.getSuffix() : source.getRootDN()));
+			sources.forEach(source -> source
+					.setRootDN(source.getRootDN() == null ? "cn=admin," + this.getSuffix() : source.getRootDN()));
 			Collections.sort(sources);
 			sourcesSorted = true;
 		}
@@ -154,14 +165,14 @@ public class PadlGeneralConfig {
 
 	@Override
 	public String toString() {
-		return "PadlConfig [instanceId=" + instanceId + ", lang=" + lang + ", suffix=" + suffix + ", adminPassword="
-				+ adminPassword + "]";
+		return "PadlConfig [sourcesSorted=" + sourcesSorted + ", instanceId=" + instanceId + ", lang=" + lang
+				+ ", suffix=" + suffix + ", adminPassword=" + "***********" + ", sources=" + sources + "]";
 	}
 
 	public String getSourceOSConfig() {
 		StringBuffer sb = new StringBuffer();
 
-		for (PadlSourceServiceConfig source : this.getSourcesInConfigurationOrder()) {
+		for (PadlSourceConfiguration source : this.getSourcesInConfigurationOrder()) {
 			if (source.getOSRequirementScript() != null) {
 				sb.append(source.getOSRequirementScript()).append("\n");
 			}

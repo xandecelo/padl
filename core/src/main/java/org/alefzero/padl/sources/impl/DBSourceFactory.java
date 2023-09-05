@@ -1,12 +1,11 @@
 package org.alefzero.padl.sources.impl;
 
-import org.alefzero.padl.sources.PadlSourceFactorySetup;
 import org.alefzero.padl.sources.PadlSourceFactory;
-import org.alefzero.padl.sources.PadlSourceService;
+import org.alefzero.padl.sources.PadlSourceParameters;
 
 public class DBSourceFactory extends PadlSourceFactory {
 
-	private DBSourceFactorySetup factorySetup = null;
+	private DBSourceFactorySetup sourceParameters = null;
 
 	@Override
 	public String getServiceType() {
@@ -15,35 +14,36 @@ public class DBSourceFactory extends PadlSourceFactory {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Class<DBSourceConfig> getServiceConfigType() {
+	public Class<DBSourceConfig> getSourceConfigType() {
 		return DBSourceConfig.class;
 	}
 
 	@Override
-	public <T extends PadlSourceService> Class<T> getService() {
-		return null;
+	@SuppressWarnings("unchecked")
+	public DBSourceService getService() {
+		return new DBSourceService();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Class<DBSourceFactorySetup> getSourceFactorySetupClass() {
-		return DBSourceFactorySetup.class;
+	public DBSourceFactorySetup getSourceParameters() {
+		return this.sourceParameters;
 	}
 
 	@Override
-	public <T extends PadlSourceFactorySetup> T getFactorySetup() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setFactorySetup(PadlSourceFactorySetup factorySetup) {
-		if (factorySetup instanceof DBSourceFactorySetup) {
-			this.factorySetup = (DBSourceFactorySetup) factorySetup;
+	public void setSourceParameters(PadlSourceParameters sourceParameters) {
+		if (sourceParameters instanceof DBSourceFactorySetup) {
+			this.sourceParameters = (DBSourceFactorySetup) sourceParameters;
 		} else {
-			throw new IllegalArgumentException("Can't convert setup class" + factorySetup.getClass().getName() + " to "
+			throw new IllegalArgumentException("Can't convert setup class" + sourceParameters.getClass().getName() + " to "
 					+ DBSourceFactorySetup.class.getName());
 		}
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Class<DBSourceFactorySetup> getSourceParameterClassType() {
+		return DBSourceFactorySetup.class;
 	}
 
 }

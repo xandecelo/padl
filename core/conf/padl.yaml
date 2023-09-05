@@ -5,7 +5,7 @@ general:
   suffix: dc=example,dc=org
   adminPassword: admin
 
-sourceFactoriesSetup:
+sourceParameters:
 - type: sql
   dbUsername: user1
   dbPassword: changeme
