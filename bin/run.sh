@@ -5,7 +5,11 @@ change_root_pwd() {
     echo "Changing root passwd"
     sleep 1
     local password=$(slappasswd -h {SSHA} -s admin)
+    echo "Running LDIF"
+    "${APP_DIR}/padl/bin/padl" admin-config "${APP_DIR}/padl/conf/padl.yaml" | sed "s|%%LDAP_ROOT_PASSWORD%%|$password|" | cat 
     "${APP_DIR}/padl/bin/padl" admin-config "${APP_DIR}/padl/conf/padl.yaml" | sed "s|%%LDAP_ROOT_PASSWORD%%|$password|" | ldapmodify -Y EXTERNAL -H ldapi:/// -a 
+    echo "Done"
+
 }
 
 change_root_pwd

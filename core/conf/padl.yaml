@@ -7,10 +7,11 @@ general:
 sources:
 - id: ldap1
   type: proxy
-  suffix: dc=a,dc=example,dc=org
+  suffix: dc=ldap,dc=example,dc=org
   targetURI: "ldap://dev.local:10389"
   aclBind: binddn="cn=admin,dc=test,dc=com" credentials="admin"
 - id: sql_users
+  enabled: false
   suffix: ou=users,dc=example,dc=org
   dnFormat: uid=%s
   dbName: db1
@@ -37,6 +38,7 @@ sources:
   objectClasses: 
   - inetOrgPerson
 - id: sql_groups
+  enabled: false
   suffix: ou=groups,dc=example,dc=org
   dnFormat: cn=%s
   type: sql

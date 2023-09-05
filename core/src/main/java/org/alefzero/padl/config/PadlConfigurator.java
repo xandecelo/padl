@@ -79,7 +79,9 @@ public class PadlConfigurator {
 					sourceNode.get("type").asText());
 			PadlSourceFactory targetFactory = sourceFactories.get((sourceNode.get("type").asText()));
 			PadlSourceConfig sourceConfig = mapper.treeToValue(sourceNode, targetFactory.getConfigClass());
-			sources.add(sourceConfig);
+			if(sourceConfig.isEnabled()) {
+				sources.add(sourceConfig);
+			}
 		}
 		logger.trace("Sources loaded: {}", sources);
 		return sources;

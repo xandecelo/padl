@@ -11,6 +11,7 @@ public abstract class PadlSourceConfig implements Comparable<PadlSourceConfig> {
 	private String suffix;
 	private String reversedSuffix;
 	private String rootDN;
+	private Boolean enabled = true;
 
 	public String getRootDN() {
 		return rootDN;
@@ -46,6 +47,14 @@ public abstract class PadlSourceConfig implements Comparable<PadlSourceConfig> {
 
 	public void setReversedSuffix(String reversedSuffix) {
 		this.reversedSuffix = reversedSuffix;
+	}
+
+	public Boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(Boolean enabled) {
+		this.enabled = enabled;
 	}
 
 	public PadlSourceConfig setSuffix(String suffix) {

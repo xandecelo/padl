@@ -72,6 +72,7 @@ public class PadlGeneralConfig {
 		if (thereIsSourceWithSameSuffixAsRootSuffix()) {
 			sb.append(getDeleteDefaultMdbLDIF());
 		} else {
+			sb.append(getDefaultRootSuffix()).append("\n\n");
 			sb.append(getRootPwdConfigurationForDefaultSuffix());
 		}
 		sb.append("\n\n");
@@ -90,7 +91,7 @@ public class PadlGeneralConfig {
 
 	private String deleteDefaultPassword() {
 		return """
-				# Delete defalt password of this ldap
+				# Delete default password of this ldap
 				dn: olcDatabase={1}mdb,cn=config
 				changetype: modify
 				delete: olcRootPW
@@ -106,6 +107,20 @@ public class PadlGeneralConfig {
 				add: olcRootPW
 				olcRootPW: %s
 				""", this.getAdminPassword());
+	}
+
+	private String getDefaultRootSuffix() {
+		return String.format("""
+				# Change default Root Suffix
+				dn: olcDatabase={1}mdb,cn=config
+				changetype: modify
+				modify: olcSuffix
+				olcSuffix: %s
+				--
+				modify: olcRootDN
+				olcRootDN: %s
+				""", this.getSuffix(), "cn=admin," + this.getSuffix());
+
 	}
 
 	private String getDeleteDefaultMdbLDIF() {
