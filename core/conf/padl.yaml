@@ -2,12 +2,12 @@
 general:
   lang: pt_BR
   instanceId: instance1
-  rootDn: dc=example,dc=org
+  suffix: dc=example,dc=org
   adminPassword: admin
 sources:
 - id: ldap1
   type: proxy
-  suffix: dc=example,dc=org
+  suffix: dc=a,dc=example,dc=org
   targetURI: "ldap://dev.local:10389"
   aclBind: binddn="cn=admin,dc=test,dc=com" credentials="admin"
 - id: sql_users

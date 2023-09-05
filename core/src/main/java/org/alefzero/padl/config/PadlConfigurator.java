@@ -52,30 +52,16 @@ public class PadlConfigurator {
 	}
 
 	public String getLdapDatabaseConfig() {
-		StringBuffer sb = new StringBuffer();
 		try {
 			loadYAMLData();
+			return generalConfig.getLDIFConfiguration();
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new IllegalStateException("There's a problem with the configuration file.");
 		}
-		generalConfig.getSourcesInConfigurationOrder().forEach(item -> sb.append(item.getConfigurationLDIF()));
 		// check if root DN is present
 		// true - insert delete default mdb configuration
 		// set passwd to rootdn
-
-		return sb.toString();
-	}
-
-	public String getLdifConfigurationForLdap() {
-		StringBuffer _return = new StringBuffer();
-
-		// remove default mdb if any source matches suffix of rootDN
-		// for each source, get config
-		// configure rootDN
-		// if any target has a memberOf, apply 'dyngroup'
-
-		return _return.toString();
 
 	}
 

@@ -171,13 +171,13 @@ public class DBSourceConfig extends PadlSourceConfig {
 		sb.append("\nobjectClass: olcDatabaseConfig");
 		sb.append("\nobjectClass: olcSqlConfig");
 		sb.append("\nolcDatabase: sql");
-		sb.append("\nolcSuffix:").append(this.getSuffix());
+		sb.append("\nolcSuffix: ").append(this.getSuffix());
 		sb.append("\nolcRootDN: ").append(this.getRootDN());
-		sb.append("\nolcDbName:").append(this.getDbName());
-		sb.append("\nolcDbUser:").append(this.getDbUser());
-		sb.append("\nolcDbPass:").append(this.getDbPass());
-		sb.append("\nolcSqlSubtreeCond:").append(this.getSubtreeCond());
-		sb.append("\nolcSqlInsEntryStmt:").append(this.getInsertEntryStatement());
+		sb.append("\nolcDbName: ").append(this.getDbName());
+		sb.append("\nolcDbUser: ").append(this.getDbUser());
+		sb.append("\nolcDbPass: ").append(this.getDbPass());
+		sb.append("\nolcSqlSubtreeCond: ").append(this.getSubtreeCond());
+		sb.append("\nolcSqlInsEntryStmt: ").append(this.getInsertEntryStatement());
 
 		return sb.toString();
 	}
