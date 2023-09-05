@@ -18,7 +18,6 @@ public class LdapProxySourceFactory  implements PadlSourceFactory {
 
 	@Override
 	public <T extends PadlSource> Class<T> getService() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
