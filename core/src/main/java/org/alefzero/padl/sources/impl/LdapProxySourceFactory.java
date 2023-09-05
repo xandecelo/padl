@@ -5,7 +5,7 @@ import org.alefzero.padl.sources.PadlSourceParameters;
 
 public class LdapProxySourceFactory extends PadlSourceFactory {
 
-	private LdapProxySourceFactorySetup sourceParameters;
+	private LdapProxySourceParameters sourceParameters;
 
 	@Override
 	public String getServiceType() {
@@ -14,8 +14,8 @@ public class LdapProxySourceFactory extends PadlSourceFactory {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Class<LdapProxySourceServiceConfig> getSourceConfigType() {
-		return LdapProxySourceServiceConfig.class;
+	public Class<LdapProxySourceConfiguration> getSourceConfigType() {
+		return LdapProxySourceConfiguration.class;
 	}
 
 	@Override
@@ -26,17 +26,17 @@ public class LdapProxySourceFactory extends PadlSourceFactory {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public LdapProxySourceFactorySetup getSourceParameters() {
+	public LdapProxySourceParameters getSourceParameters() {
 		return this.sourceParameters;
 	}
 
 	@Override
 	public void setSourceParameters(PadlSourceParameters factorySetup) {
-		if (factorySetup instanceof LdapProxySourceFactorySetup) {
-			this.sourceParameters = (LdapProxySourceFactorySetup) factorySetup;
+		if (factorySetup instanceof LdapProxySourceParameters) {
+			this.sourceParameters = (LdapProxySourceParameters) factorySetup;
 		} else {
 			throw new IllegalArgumentException("Can't convert setup class" + factorySetup.getClass().getName() + " to "
-					+ LdapProxySourceFactorySetup.class.getName());
+					+ LdapProxySourceParameters.class.getName());
 		}
 	}
 

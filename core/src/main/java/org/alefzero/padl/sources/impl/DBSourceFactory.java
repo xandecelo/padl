@@ -5,7 +5,7 @@ import org.alefzero.padl.sources.PadlSourceParameters;
 
 public class DBSourceFactory extends PadlSourceFactory {
 
-	private DBSourceFactorySetup sourceParameters = null;
+	private DBSourceParameters sourceParameters = null;
 
 	@Override
 	public String getServiceType() {
@@ -14,8 +14,8 @@ public class DBSourceFactory extends PadlSourceFactory {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Class<DBSourceConfig> getSourceConfigType() {
-		return DBSourceConfig.class;
+	public Class<DBSourceConfiguration> getSourceConfigType() {
+		return DBSourceConfiguration.class;
 	}
 
 	@Override
@@ -26,24 +26,24 @@ public class DBSourceFactory extends PadlSourceFactory {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public DBSourceFactorySetup getSourceParameters() {
+	public DBSourceParameters getSourceParameters() {
 		return this.sourceParameters;
 	}
 
 	@Override
 	public void setSourceParameters(PadlSourceParameters sourceParameters) {
-		if (sourceParameters instanceof DBSourceFactorySetup) {
-			this.sourceParameters = (DBSourceFactorySetup) sourceParameters;
+		if (sourceParameters instanceof DBSourceParameters) {
+			this.sourceParameters = (DBSourceParameters) sourceParameters;
 		} else {
 			throw new IllegalArgumentException("Can't convert setup class" + sourceParameters.getClass().getName() + " to "
-					+ DBSourceFactorySetup.class.getName());
+					+ DBSourceParameters.class.getName());
 		}
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Class<DBSourceFactorySetup> getSourceParameterClassType() {
-		return DBSourceFactorySetup.class;
+	public Class<DBSourceParameters> getSourceParameterClassType() {
+		return DBSourceParameters.class;
 	}
 
 }

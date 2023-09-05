@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.alefzero.padl.sources.PadlSourceConfiguration;
 
-public class DBSourceConfig extends PadlSourceConfiguration {
+public class DBSourceConfiguration extends PadlSourceConfiguration {
 
 	private String sourceJdbcURL;
 	private String sourceUsername;
