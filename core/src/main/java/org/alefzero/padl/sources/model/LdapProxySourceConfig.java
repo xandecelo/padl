@@ -31,7 +31,7 @@ public class LdapProxySourceConfig extends PadlSourceConfig {
 	@Override
 	public String getConfigurationLDIF() {
 		StringBuffer sb = new StringBuffer();
-		return sb.append("# Ldap proxy configuration (").append(this.getId())
+		return sb.append("\n\n# Ldap proxy configuration (").append(this.getId())
 				.append(")\ndn: olcDatabase=ldap,cn=config").append("\nobjectClass: olcDatabaseConfig")
 				.append("\nobjectClass: olcLDAPConfig").append("\nolcDatabase: ldap").append("\nolcRootDN: ")
 				.append(super.getRootDN()).append("\nolcSuffix:").append(super.getSuffix()).append("\nolcDbURI: ")
