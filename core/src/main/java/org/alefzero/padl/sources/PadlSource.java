@@ -1,4 +1,4 @@
-package org.alefzero.padl.config.model;
+package org.alefzero.padl.sources;
 
 public interface PadlSource {
 	

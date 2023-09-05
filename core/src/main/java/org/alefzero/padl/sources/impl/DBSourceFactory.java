@@ -1,8 +1,7 @@
-package org.alefzero.padl.sources;
+package org.alefzero.padl.sources.impl;
 
-import org.alefzero.padl.config.model.PadlSource;
-import org.alefzero.padl.config.model.PadlSourceFactory;
-import org.alefzero.padl.sources.model.DBSourceConfig;
+import org.alefzero.padl.sources.PadlSource;
+import org.alefzero.padl.sources.PadlSourceFactory;
 
 public class DBSourceFactory implements PadlSourceFactory {
 

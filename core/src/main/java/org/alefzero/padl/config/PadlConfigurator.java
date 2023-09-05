@@ -11,10 +11,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 
-import org.alefzero.padl.config.model.PadlGeneralConfig;
-import org.alefzero.padl.config.model.PadlSourceConfig;
-import org.alefzero.padl.config.model.PadlSourceFactory;
 import org.alefzero.padl.exceptions.PadlUnrecoverableError;
+import org.alefzero.padl.sources.PadlSourceConfig;
+import org.alefzero.padl.sources.PadlSourceFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

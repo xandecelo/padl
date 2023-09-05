@@ -1,6 +1,6 @@
-package org.alefzero.padl.sources.model;
+package org.alefzero.padl.sources.impl;
 
-import org.alefzero.padl.config.model.PadlSourceConfig;
+import org.alefzero.padl.sources.PadlSourceConfig;
 
 public class LdapProxySourceConfig extends PadlSourceConfig {
 

@@ -1,9 +1,9 @@
-package org.alefzero.padl.sources.model;
+package org.alefzero.padl.sources.impl;
 
 import java.util.Arrays;
 import java.util.List;
 
-import org.alefzero.padl.config.model.PadlSourceConfig;
+import org.alefzero.padl.sources.PadlSourceConfig;
 
 public class DBSourceConfig extends PadlSourceConfig {
 

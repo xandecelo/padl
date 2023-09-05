@@ -1,9 +1,11 @@
-package org.alefzero.padl.config.model;
+package org.alefzero.padl.config;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.alefzero.padl.sources.PadlSourceConfig;
 
 public class PadlGeneralConfig {
 
