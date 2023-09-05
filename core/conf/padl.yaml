@@ -4,6 +4,15 @@ general:
   instanceId: instance1
   suffix: dc=example,dc=org
   adminPassword: admin
+
+sourceFactoriesSetup:
+- type: sql
+  dbUsername: user1
+  dbPassword: changeme
+  dbServer: localhost
+  dbPort: 3306
+  dbDatabase: backsql
+  
 sources:
 - id: ldap1
   type: proxy
@@ -14,7 +23,6 @@ sources:
   enabled: false
   suffix: ou=users,dc=example,dc=org
   dnFormat: uid=%s
-  dbName: db1
   type: sql
   query: select username, concat(first_name, ' ', surname) as full_name, first_name, surname, phone from users
   idColumn: username

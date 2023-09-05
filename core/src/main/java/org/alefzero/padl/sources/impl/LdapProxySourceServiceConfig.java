@@ -1,8 +1,8 @@
 package org.alefzero.padl.sources.impl;
 
-import org.alefzero.padl.sources.PadlSourceConfig;
+import org.alefzero.padl.sources.PadlSourceServiceConfig;
 
-public class LdapProxySourceConfig extends PadlSourceConfig {
+public class LdapProxySourceServiceConfig extends PadlSourceServiceConfig {
 
 	private String targetURI;
 	private String aclBind;
@@ -27,7 +27,7 @@ public class LdapProxySourceConfig extends PadlSourceConfig {
 	public String toString() {
 		return "LdapProxySourceConfig [targetURI=" + targetURI + ", aclBind=" + aclBind + "]";
 	}
-
+	
 	@Override
 	public String getConfigurationLDIF() {
 		StringBuffer sb = new StringBuffer();
@@ -42,6 +42,11 @@ public class LdapProxySourceConfig extends PadlSourceConfig {
 		sb.append("\nolcDbACLBind: ").append(this.getAclBind());
 		sb.append("\n").toString();
 		return sb.toString();
+	}
+
+	@Override
+	protected boolean hasOSPrerequirementScript() {
+		return false;
 	}
 
 }

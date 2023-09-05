@@ -21,21 +21,21 @@ import org.junit.jupiter.api.function.Executable;
 class PadlConfiguratorTest {
 	protected static final Logger logger = LogManager.getLogger();
 	
-	private PadlConfigurator clazz = null;
+	private PadlInstance clazz = null;
 	
 	@BeforeAll
 	void prepare()  {
 		assertDoesNotThrow(new Executable(){
 			@Override
 			public void execute() throws Throwable {
-				clazz = new PadlConfigurator(Path.of("conf/padl.yaml"));	
+				clazz = new PadlInstance(Path.of("conf/padl.yaml"));	
 			} 
 		}, "cannot find YAML test configuration");
 	}
 	
 	@Test
 	void testTargetLdifPasswordChange() {
-		assertNotNull(clazz.getTargetAdminConfig(), "configuration");
+		assertNotNull(clazz.getLdapAdminConfig(), "configuration");
 	}
 
 }

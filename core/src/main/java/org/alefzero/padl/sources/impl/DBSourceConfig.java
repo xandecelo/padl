@@ -3,13 +3,14 @@ package org.alefzero.padl.sources.impl;
 import java.util.Arrays;
 import java.util.List;
 
-import org.alefzero.padl.sources.PadlSourceConfig;
+import org.alefzero.padl.sources.PadlSourceServiceConfig;
 
-public class DBSourceConfig extends PadlSourceConfig {
+public class DBSourceConfig extends PadlSourceServiceConfig {
 
-	private String dbName;
-	private String dbUser;
-	private String dbPass;
+	private String sourceJdbcURL;
+	private String sourceUsername;
+	private String sourcePassword;
+	
 	private String subtreeCond = "\"ldap_entries.dn LIKE CONCAT('%',?)\"";
 	private String insertEntryStatement = "\"insert into ldap_entries (dn,oc_map_id,parent,keyval) values (?,?,?,?)\"";
 
@@ -20,28 +21,28 @@ public class DBSourceConfig extends PadlSourceConfig {
 	private List<JoinData> joinData;
 	private List<String> objectClasses;
 
-	public String getDbName() {
-		return dbName;
+	public String getSourceJdbcURL() {
+		return sourceJdbcURL;
 	}
 
-	public void setDbName(String dbName) {
-		this.dbName = dbName;
+	public void setSourceJdbcURL(String sourceJdbcURL) {
+		this.sourceJdbcURL = sourceJdbcURL;
 	}
 
-	public String getDbUser() {
-		return dbUser;
+	public String getSourceUsername() {
+		return sourceUsername;
 	}
 
-	public void setDbUser(String dbUser) {
-		this.dbUser = dbUser;
+	public void setSourceUsername(String sourceUsername) {
+		this.sourceUsername = sourceUsername;
 	}
 
-	public String getDbPass() {
-		return dbPass;
+	public String getSourcePassword() {
+		return sourcePassword;
 	}
 
-	public void setDbPass(String dbPass) {
-		this.dbPass = dbPass;
+	public void setSourcePassword(String sourcePassword) {
+		this.sourcePassword = sourcePassword;
 	}
 
 	public String getSubtreeCond() {
@@ -108,12 +109,6 @@ public class DBSourceConfig extends PadlSourceConfig {
 		this.objectClasses = objectClasses;
 	}
 
-	@Override
-	public String toString() {
-		return "DBSourceConfig [dnFormat=" + dnFormat + ", query=" + query + ", idColumn=" + idColumn + ", attributes="
-				+ Arrays.toString(attributes) + ", joinData=" + joinData + ", objectClasses=" + objectClasses + "]";
-	}
-
 	public static class JoinData {
 
 		private String id;
@@ -173,13 +168,20 @@ public class DBSourceConfig extends PadlSourceConfig {
 		sb.append("\nolcDatabase: sql");
 		sb.append("\nolcSuffix: ").append(this.getSuffix());
 		sb.append("\nolcRootDN: ").append(this.getRootDN());
-		sb.append("\nolcDbName: ").append(this.getDbName());
-		sb.append("\nolcDbUser: ").append(this.getDbUser());
-		sb.append("\nolcDbPass: ").append(this.getDbPass());
+		// TODO: fix
+//		sb.append("\nolcDbName: ").append(this.getDbName());
+		sb.append("\nolcDbUser: ").append(this.getSourceUsername());
+		sb.append("\nolcDbPass: ").append(this.getSourcePassword());
 		sb.append("\nolcSqlSubtreeCond: ").append(this.getSubtreeCond());
 		sb.append("\nolcSqlInsEntryStmt: ").append(this.getInsertEntryStatement());
 
 		return sb.toString();
 	}
+
+	@Override
+	protected boolean hasOSPrerequirementScript() {
+		return true;
+	}
+
 
 }

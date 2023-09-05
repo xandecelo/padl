@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "Running backsql mariadb odbc configuration".
+
+cat > mariadb_template.ini << EOF 
+[backdb]
+Description=backdb connection
+Driver=MariaDB Unicode
+SERVER=%%DB_SERVER%%
+USER=%%DB_USERNAME%%
+PASSWORD=%%DB_PASSWORD%%
+DATABASE=%%DB_DATABASE%%
+PORT=%%DB_PORT%%
+EOF
+
+odbcinst -i -s -l -f mariadb_template.ini
+
+
+echo "Done."

@@ -8,12 +8,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 
 import org.alefzero.padl.exceptions.PadlUnrecoverableError;
-import org.alefzero.padl.sources.PadlSourceConfig;
+import org.alefzero.padl.sources.PadlSourceServiceConfig;
 import org.alefzero.padl.sources.PadlSourceFactory;
+import org.alefzero.padl.sources.PadlSourceFactorySetup;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
-public class PadlConfigurator {
+public class PadlInstance {
 
 	protected static final Logger logger = LogManager.getLogger();
 
@@ -30,61 +31,51 @@ public class PadlConfigurator {
 	private PadlGeneralConfig generalConfig;
 	private Map<String, PadlSourceFactory> sourceFactories = new HashMap<String, PadlSourceFactory>();
 
-	public PadlConfigurator(Path configurationFile) throws FileSystemException {
+	public PadlInstance(Path configurationFile) throws IOException {
 		this.configurationFile = configurationFile;
 		if (configurationFile != null && !Files.exists(configurationFile)) {
 			throw new FileSystemException(
 					String.format("Cannot process configuration file with value of %s", configurationFile));
-		}
-		loadAllSourceFactoriesTypes();
-	}
-
-	public String getTargetAdminConfig() {
-		return new StringBuffer().append("# Change cn=admin,cn=config password")
-				.append("\ndn: olcDatabase={0}config,cn=config").append("\nchangetype: modify")
-				.append("\nreplace: olcRootPW").append("\nolcRootPW: %%LDAP_ROOT_PASSWORD%%").append("\n").append("\n")
-				.append(getLdapDatabaseConfig()).toString();
-	}
-
-	public PadlGeneralConfig getGeneralConfig() {
-		return Objects.requireNonNull(generalConfig, "Configuration has not been correctly initialized.");
-	}
-
-	public String getLdapDatabaseConfig() {
-		try {
+		} else {
+			loadAllSourceFactoriesTypes();
 			loadYAMLData();
-			return generalConfig.getLDIFConfiguration();
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new IllegalStateException("There's a problem with the configuration file.");
 		}
-		// check if root DN is present
-		// true - insert delete default mdb configuration
-		// set passwd to rootdn
+	}
 
+	public String getLdapAdminConfig() {
+		StringBuffer sb = new StringBuffer().append("# Change cn=admin,cn=config password");
+		sb.append("\ndn: olcDatabase={0}config,cn=config");
+		sb.append("\nchangetype: modify");
+		sb.append("\nreplace: olcRootPW");
+		sb.append("\nolcRootPW: %%LDAP_ROOT_PASSWORD%%");
+		sb.append("\n").append("\n");
+		sb.append(generalConfig.getLDIFConfiguration()).toString();
+		return sb.toString();
 	}
 
 	private void loadYAMLData() throws IOException {
 		ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 		JsonNode rootTree = mapper.readTree(configurationFile.toFile());
 		generalConfig = mapper.treeToValue(rootTree.get("general"), PadlGeneralConfig.class);
-		generalConfig.setSources(readAllSourcesFromYAML(mapper, rootTree.get("sources")));
-	}
 
-	private List<PadlSourceConfig> readAllSourcesFromYAML(ObjectMapper mapper, JsonNode sourcesNode)
-			throws JsonProcessingException, IllegalArgumentException {
-		List<PadlSourceConfig> sources = new LinkedList<PadlSourceConfig>();
-		for (JsonNode sourceNode : sourcesNode) {
+		for (JsonNode setup : rootTree.get("sourceFactoriesSetup")) {
+			PadlSourceFactory targetFactory = sourceFactories.get((setup.get("type").asText()));
+			targetFactory.setFactorySetup(mapper.treeToValue(setup, targetFactory.getSourceFactorySetupClass()));
+		}
+
+		List<PadlSourceServiceConfig> sources = new LinkedList<PadlSourceServiceConfig>();
+		for (JsonNode sourceNode : rootTree.get("sources")) {
 			logger.info("Reading configuration for source {} of type {}.", sourceNode.get("id").asText(),
 					sourceNode.get("type").asText());
 			PadlSourceFactory targetFactory = sourceFactories.get((sourceNode.get("type").asText()));
-			PadlSourceConfig sourceConfig = mapper.treeToValue(sourceNode, targetFactory.getConfigClass());
-			if(sourceConfig.isEnabled()) {
+			PadlSourceServiceConfig sourceConfig = mapper.treeToValue(sourceNode, targetFactory.getServiceConfigType());
+			if (sourceConfig.isEnabled()) {
 				sources.add(sourceConfig);
 			}
 		}
 		logger.trace("Sources loaded: {}", sources);
-		return sources;
+
+		generalConfig.setSources(sources);
 	}
 
 	private void loadAllSourceFactoriesTypes() {
@@ -108,6 +99,35 @@ public class PadlConfigurator {
 
 		});
 		logger.trace(".loadAllSourceFactoriesTypes. [return]");
+	}
+
+	@Deprecated
+	public String getSourceOsConfig() {
+		return generalConfig.getSourceOSConfig();
+	}
+
+	public String getSourceOSEnvFor(String sourceType) {
+
+		String result = "";
+
+		return result;
+	}
+
+	public void checkConnectivity() {
+		// TODO Auto-generated method stub
+		// loop em todos os sources
+		// testar conectividade
+
+	}
+
+	public void checkYAML() {
+		// TODO Auto-generated method stub
+		// loop em todos os source
+		// verificar inconsistencias
+	}
+
+	public String getGlobalOSVariables() {
+		return "LDAP_ADM_PASSWORD=" + generalConfig.getAdminPassword();
 	}
 
 }

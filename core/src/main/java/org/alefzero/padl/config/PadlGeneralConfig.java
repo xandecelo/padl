@@ -4,9 +4,13 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.alefzero.padl.sources.PadlSourceConfig;
+import org.alefzero.padl.sources.PadlSourceServiceConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PadlGeneralConfig {
+
+	protected static final Logger logger = LogManager.getLogger();
 
 	private boolean sourcesSorted = false;
 
@@ -14,7 +18,7 @@ public class PadlGeneralConfig {
 	private String lang;
 	private String suffix;
 	private String adminPassword;
-	private List<PadlSourceConfig> sources = new LinkedList<PadlSourceConfig>();
+	private List<PadlSourceServiceConfig> sources = new LinkedList<PadlSourceServiceConfig>();
 
 	public String getInstanceId() {
 		return instanceId;
@@ -53,11 +57,11 @@ public class PadlGeneralConfig {
 		return this;
 	}
 
-	public List<PadlSourceConfig> getSources() {
+	public List<PadlSourceServiceConfig> getSources() {
 		return sources;
 	}
 
-	public PadlGeneralConfig setSources(List<PadlSourceConfig> sources) {
+	public PadlGeneralConfig setSources(List<PadlSourceServiceConfig> sources) {
 		this.sources = sources;
 		return this;
 	}
@@ -73,13 +77,14 @@ public class PadlGeneralConfig {
 
 		boolean addDefaultMdbBack = true;
 
-		for (PadlSourceConfig item : this.getSourcesInConfigurationOrder()) {
-			if (this.getSuffix().equalsIgnoreCase(item.getSuffix())) {
-				sb.append("\n").append(item.getConfigurationLDIF().trim());
+		for (PadlSourceServiceConfig source : this.getSourcesInConfigurationOrder()) {
+			logger.trace("Processing source [{}, {}] to configuration LDIF", source.getId(), source.getType());
+			if (this.getSuffix().equalsIgnoreCase(source.getSuffix())) {
+				sb.append("\n").append(source.getConfigurationLDIF().trim());
 				sb.append("olcRootPW: ").append(this.getAdminPassword());
 				addDefaultMdbBack = false;
 			} else {
-				sb.append(item.getConfigurationLDIF());
+				sb.append(source.getConfigurationLDIF());
 			}
 			sb.append("\n\n");
 		}
@@ -107,7 +112,7 @@ public class PadlGeneralConfig {
 
 		return String.format("""
 				# Default MDB configuration
-				dn: olcDatabase={1}mdb,cn=config
+				dn: olcDatabase=mdb,cn=config
 				objectClass: olcDatabaseConfig
 				objectClass: olcMdbConfig
 				olcDatabase: {1}mdb
@@ -137,7 +142,7 @@ public class PadlGeneralConfig {
 				""";
 	}
 
-	private List<PadlSourceConfig> getSourcesInConfigurationOrder() {
+	private List<PadlSourceServiceConfig> getSourcesInConfigurationOrder() {
 		if (!sourcesSorted) {
 			sources.forEach(
 					source -> source.setRootDN(source.getRootDN() == null ? this.getSuffix() : source.getRootDN()));
@@ -151,6 +156,17 @@ public class PadlGeneralConfig {
 	public String toString() {
 		return "PadlConfig [instanceId=" + instanceId + ", lang=" + lang + ", suffix=" + suffix + ", adminPassword="
 				+ adminPassword + "]";
+	}
+
+	public String getSourceOSConfig() {
+		StringBuffer sb = new StringBuffer();
+
+		for (PadlSourceServiceConfig source : this.getSourcesInConfigurationOrder()) {
+			if (source.getOSRequirementScript() != null) {
+				sb.append(source.getOSRequirementScript()).append("\n");
+			}
+		}
+		return sb.toString();
 	}
 
 }

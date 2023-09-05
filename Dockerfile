@@ -17,11 +17,11 @@ run echo '--enable-sql --enable-ldap ' >> debian/configure.options
 run debuild --no-lintian -i -us -uc -b 
 
 
-from docker.io/library/gradle:jdk17-focal as build
+from docker.io/library/gradle:jdk17-focal as build 
 env SOURCE_DIR="/opt/source"
 add core "$SOURCE_DIR"/core
 WORKDIR "$SOURCE_DIR"/core
-RUN ./gradlew distTar
+RUN gradle distTar --no-daemon
 
 from docker.io/library/eclipse-temurin:17-jre-jammy
 expose 389
@@ -40,5 +40,7 @@ copy --from=build "$SOURCE_DIR"/core/build/distributions/padl.tar ${APP_DIR}
 run tar xvf "${APP_DIR}"/padl.tar && rm padl.tar
 add bin bin
 add core/conf padl/conf
+add core/source-config source-config
+env LDAP_ADM_PASSWORD="changeme"
 entrypoint [ "/bin/bash", "-c" ]
 cmd [ "source ./bin/run.sh" ]

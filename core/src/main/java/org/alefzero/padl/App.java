@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.ScheduledFuture;
 
-import org.alefzero.padl.config.PadlConfigurator;
+import org.alefzero.padl.config.PadlInstance;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,29 +17,44 @@ public class App {
 	protected static final Logger logger = LogManager.getLogger();
 
 	private static final String DEFAULT_ACTION = "help";
-	private static final String DEFAULT_CONFIGURATION_FILENAME = "./conf/padl.yaml";
+	private static final String DEFAULT_CONFIGURATION_FILENAME = System.getenv("$APP_DIR") + "./conf/padl.yaml";
+	private ScheduledFuture<?> executor = null;
 
 	public static void main(String[] args) {
 		logger.info("Padl is starting");
 		logger.debug("Padl is starting with parameters %s", Arrays.toString(args));
-
-		String action = args.length > 0 ? args[0] : DEFAULT_ACTION;
 		String configurationFilename = getConfigurationFilename(args);
-		new App().startAction(action, configurationFilename);
+		String action = args.length > 1 ? args[1] : DEFAULT_ACTION;
+		String sourceType = args.length > 2 ? args[2] : "";
+		new App().startAction(action, configurationFilename, sourceType);
 	}
 
-	private ScheduledFuture<?> executor = null;
-
-	private void startAction(String action, String configurationFilename) {
+	private void startAction(String action, String configurationFilename, String sourceType) {
 		logger.trace(".startAction [action: {}, configurationFilename: {}]", action, configurationFilename);
 		try {
 			Path configurationFile = Paths.get(configurationFilename);
+			PadlInstance instance = new PadlInstance(configurationFile);
 			switch (action.toLowerCase()) {
-			case "admin-config":
-				getAdminConfiguration(configurationFile);
+			case "check-yaml":
+				checkYAML(instance);
 				break;
-			case "run":
-				runSyncProcess(configurationFile);
+			case "get-os-variables":
+				getGlobalOSVariables(instance);
+				break;
+			case "check-connectivity":
+				checkConnectivity(instance);
+				break;
+			case "ldap-setup":
+				getAdminConfiguration(instance);
+				break;
+			case "source-os-config-list":
+				getSourceOSScriptList(instance);
+				break;
+			case "source-env-config":
+				getSourceOSEnv(instance, sourceType);
+				break;
+			case "sync":
+				runSyncProcess(instance);
 				break;
 			case "help":
 			default:
@@ -54,41 +69,54 @@ public class App {
 		}
 	}
 
+	private void getGlobalOSVariables(PadlInstance instance) {
+		System.out.print(instance.getGlobalOSVariables());
+		
+	}
+
+	private void checkConnectivity(PadlInstance instance) throws IOException {
+		instance.checkConnectivity();
+
+	}
+
+	private void checkYAML(PadlInstance instance) throws IOException {
+		instance.checkYAML();
+	}
+
+	private void getSourceOSEnv(PadlInstance instance, String sourceType) throws IOException {
+		System.out.println(instance.getSourceOSEnvFor(sourceType));
+	}
+
 	public static String getConfigurationFilename(String[] args) {
 		logger.trace(".getConfigurationFilename [args: {}]", Arrays.toString(args));
-		String configurationFilename = args.length > 1 ? args[1] : "";
+		String configurationFilename = args.length > 0 ? args[0] : "";
 		configurationFilename = configurationFilename.isEmpty() ? DEFAULT_CONFIGURATION_FILENAME
 				: configurationFilename;
 		logger.trace(".getConfigurationFilename [return: {}]", configurationFilename);
 		return configurationFilename;
 	}
 
-	private void getAdminConfiguration(Path configurationFile) throws IOException {
-		PadlConfigurator config = new PadlConfigurator(configurationFile);
-		System.out.println(config.getTargetAdminConfig());
+	private void getAdminConfiguration(PadlInstance instance) throws IOException {
+		System.out.println(instance.getLdapAdminConfig());
+	}
+
+	private void getSourceOSScriptList(PadlInstance instance) throws IOException {
+		System.out.println(instance.getSourceOsConfig());
 	}
 
 	private void help() {
 		logger.trace(".help");
-		logger.info("""
-
-
-				Padl - an easy proxy ldap configurator.
-				Usage: run.sh admin-config|help|run
-
-				""");
-		
-		System.out.println("""
-
+		String help = """
 
 				Padl - an easy proxy ldap configurator.
-				Usage: run.sh admin-config|help|run
+				Usage: run.sh configuration_file.yaml help|admin-config|run|source-os-config-list
 
-				""");
+				""";
+		logger.info(help);
+		System.out.println(help);
 	}
 
-	private void runSyncProcess(Path configurationFile) {
-		logger.trace(".runSyncProcess [configurationFilename: {}]", configurationFile);
+	private void runSyncProcess(PadlInstance instance) {
 
 		Thread shutdownListener = new Thread() {
 			public void run() {
