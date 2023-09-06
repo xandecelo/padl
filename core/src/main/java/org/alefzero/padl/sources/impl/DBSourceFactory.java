@@ -5,7 +5,7 @@ import org.alefzero.padl.sources.PadlSourceParameters;
 
 public class DBSourceFactory extends PadlSourceFactory {
 
-	private DBSourceParameters sourceParameters = null;
+	private DBSourceParameters sourceParameters = new DBSourceParameters();
 
 	@Override
 	public String getServiceType() {

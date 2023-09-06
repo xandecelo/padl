@@ -51,8 +51,8 @@ public class App {
 			case "source-os-config-list":
 				instance.getSourceOSScriptList();
 				break;
-			case "source-env-config":
-				instance.getSourceOSEnv(sourceType);
+			case "source-get-os-variables":
+				instance.getSourceParameterOSEnv(sourceType);
 				break;
 			case "sync":
 				runSyncProcess(instance);
@@ -84,7 +84,7 @@ public class App {
 		String help = """
 
 				Padl - an easy proxy ldap configurator.
-				Usage: run.sh configuration_file.yaml help|admin-config|run|source-os-config-list
+				Usage: run.sh configuration_file.yaml help|admin-config|run|source-os-config-list|source-get-os-variables
 
 				""";
 		logger.info(help);

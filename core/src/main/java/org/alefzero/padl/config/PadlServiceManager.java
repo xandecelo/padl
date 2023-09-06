@@ -83,6 +83,7 @@ public class PadlServiceManager {
 				PadlSourceService service = serviceFactory.getService();
 				service.setSourceParameters(serviceFactory.getSourceParameters());
 				service.setConfig(sourceConfig);
+				sourceConfig.setSource(service);
 				sourceServices.put(sourceConfig.getId(), service);
 			}
 		}
@@ -93,6 +94,10 @@ public class PadlServiceManager {
 
 	public PadlSourceService getSourceById(String id) {
 		return sourceServices.get(id);
+	}
+
+	public PadlSourceFactory getFactoryByType(String type) {
+		return sourceFactories.get(type);
 	}
 
 }

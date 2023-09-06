@@ -5,6 +5,7 @@ import java.util.Objects;
 public abstract class PadlSourceConfiguration implements Comparable<PadlSourceConfiguration> {
 
 	private PadlSourceFactory factory = null;
+	private PadlSourceService source = null;
 	
 	public abstract String getConfigurationLDIF();
 	
@@ -67,14 +68,14 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 	}
 	
 	public String getOSRequirementScript() {
-		return hasOSPrerequirementScript() ? "source-" + this.getType().toLowerCase() : null;
+		return hasOSPreScript() ? "source-" + this.getType().toLowerCase() : null;
 	}
 
 	public String getOSEnv() {
 		return "";
 	}
 
-	protected abstract boolean hasOSPrerequirementScript();
+	public abstract boolean hasOSPreScript();
 
 	@Override
 	public final int compareTo(PadlSourceConfiguration o) {
@@ -91,5 +92,14 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 	public void setFactory(PadlSourceFactory factory) {
 		this.factory = factory;
 	}
+
+	public PadlSourceService getSource() {
+		return source;
+	}
+
+	public void setSource(PadlSourceService source) {
+		this.source = source;
+	}
+
 
 }

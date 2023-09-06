@@ -20,7 +20,7 @@ sources:
   targetURI: "ldap://dev.local:10389"
   aclBind: binddn="cn=admin,dc=test,dc=com" credentials="admin"
 - id: sql_users
-  enabled: false
+  enabled: true
   suffix: ou=users,dc=example,dc=org
   dnFormat: uid=%s
   type: sql

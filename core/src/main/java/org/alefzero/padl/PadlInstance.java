@@ -2,9 +2,11 @@ package org.alefzero.padl;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.stream.Collectors;
 
 import org.alefzero.padl.config.PadlConfig;
 import org.alefzero.padl.config.PadlServiceManager;
+import org.alefzero.padl.sources.PadlSourceConfiguration;
 import org.alefzero.padl.sources.PadlSourceService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,12 +33,12 @@ public class PadlInstance {
 
 	public void checkConnectivity() {
 		// TODO Auto-generated method stub
-
 	}
 
 	public void getSourceOSScriptList() {
-		// TODO Auto-generated method stub
-
+		System.out.print(String.join(" ",
+				config.getSourcesInConfigurationOrder().stream().filter(PadlSourceConfiguration::hasOSPreScript)
+						.map(PadlSourceConfiguration::getOSRequirementScript).collect(Collectors.toList())));
 	}
 
 	public void getLDIFSetupConfiguration() {
@@ -44,9 +46,9 @@ public class PadlInstance {
 		System.out.println(config.getLDIFSetupConfiguration());
 	}
 
-	public void getSourceOSEnv(String sourceType) {
-		// TODO Auto-generated method stub
-
+	public void getSourceParameterOSEnv(String sourceType) {
+		logger.trace(".getSourceParameterOSEnv [sourceType={}]", sourceType);
+		System.out.print(manager.getFactoryByType(sourceType).getSourceParameters().getOSEnv());
 	}
 
 	public void runSyncProcess() {

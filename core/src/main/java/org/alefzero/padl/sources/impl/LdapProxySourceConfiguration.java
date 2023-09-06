@@ -45,8 +45,8 @@ public class LdapProxySourceConfiguration extends PadlSourceConfiguration {
 	}
 
 	@Override
-	protected boolean hasOSPrerequirementScript() {
-		return false;
+	public boolean hasOSPreScript() {
+		return true;
 	}
 
 }

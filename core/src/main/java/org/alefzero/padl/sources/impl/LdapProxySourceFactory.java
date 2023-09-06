@@ -5,7 +5,7 @@ import org.alefzero.padl.sources.PadlSourceParameters;
 
 public class LdapProxySourceFactory extends PadlSourceFactory {
 
-	private LdapProxySourceParameters sourceParameters;
+	private LdapProxySourceParameters sourceParameters = new LdapProxySourceParameters();
 
 	@Override
 	public String getServiceType() {
@@ -45,6 +45,5 @@ public class LdapProxySourceFactory extends PadlSourceFactory {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 
 }

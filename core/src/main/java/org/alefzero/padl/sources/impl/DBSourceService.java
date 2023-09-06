@@ -7,7 +7,6 @@ public class DBSourceService extends PadlSourceService {
 	@Override
 	public void sync() {
 		// TODO Auto-generated method stub
-		
 	}
 
 }

@@ -7,10 +7,11 @@ import org.alefzero.padl.sources.PadlSourceConfiguration;
 
 public class DBSourceConfiguration extends PadlSourceConfiguration {
 
-	private String sourceJdbcURL;
-	private String sourceUsername;
-	private String sourcePassword;
-	
+	private String jdbcURL;
+
+	private String username;
+	private String password;
+
 	private String subtreeCond = "\"ldap_entries.dn LIKE CONCAT('%',?)\"";
 	private String insertEntryStatement = "\"insert into ldap_entries (dn,oc_map_id,parent,keyval) values (?,?,?,?)\"";
 
@@ -21,28 +22,28 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	private List<JoinData> joinData;
 	private List<String> objectClasses;
 
-	public String getSourceJdbcURL() {
-		return sourceJdbcURL;
+	public String getJdbcURL() {
+		return jdbcURL;
 	}
 
-	public void setSourceJdbcURL(String sourceJdbcURL) {
-		this.sourceJdbcURL = sourceJdbcURL;
+	public void setJdbcURL(String jdbcURL) {
+		this.jdbcURL = jdbcURL;
 	}
 
-	public String getSourceUsername() {
-		return sourceUsername;
+	public String getUsername() {
+		return username;
 	}
 
-	public void setSourceUsername(String sourceUsername) {
-		this.sourceUsername = sourceUsername;
+	public void setUsername(String username) {
+		this.username = username;
 	}
 
-	public String getSourcePassword() {
-		return sourcePassword;
+	public String getPassword() {
+		return password;
 	}
 
-	public void setSourcePassword(String sourcePassword) {
-		this.sourcePassword = sourcePassword;
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
 	public String getSubtreeCond() {
@@ -158,7 +159,7 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 
 	@Override
 	public String getConfigurationLDIF() {
-
+		DBSourceParameters params = (DBSourceParameters) this.getSource().getSourceParameters();
 		StringBuffer sb = new StringBuffer();
 		sb.append("\n\n# Back-sql ldap configuration (").append(this.getId()).append(")");
 		sb.append("\ndn: olcDatabase=sql,cn=config");
@@ -168,20 +169,16 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		sb.append("\nolcDatabase: sql");
 		sb.append("\nolcSuffix: ").append(this.getSuffix());
 		sb.append("\nolcRootDN: ").append(this.getRootDN());
-		// TODO: fix
-//		sb.append("\nolcDbName: ").append(this.getDbName());
-		sb.append("\nolcDbUser: ").append(this.getSourceUsername());
-		sb.append("\nolcDbPass: ").append(this.getSourcePassword());
+		sb.append("\nolcDbName: ").append(params.getDbDatabase());
+		sb.append("\nolcDbUser: ").append(params.getDbUsername());
+		sb.append("\nolcDbPass: ").append(params.getDbPassword());
 		sb.append("\nolcSqlSubtreeCond: ").append(this.getSubtreeCond());
 		sb.append("\nolcSqlInsEntryStmt: ").append(this.getInsertEntryStatement());
-
 		return sb.toString();
 	}
 
-	@Override
-	protected boolean hasOSPrerequirementScript() {
+	public boolean hasOSPreScript() {
 		return true;
 	}
-
 
 }
