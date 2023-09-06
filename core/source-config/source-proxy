@@ -1,5 +1,0 @@
-#!/bin/bash
-
-echo "Running proxy configuration".
-echo "Nothing to do"
-echo "Done."

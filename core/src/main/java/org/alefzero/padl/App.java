@@ -46,9 +46,8 @@ public class App {
 				break;
 			case "ldap-setup":
 				instance.getLDIFSetupConfiguration();
-				
 				break;
-			case "source-os-config-list":
+			case "source-os-script-list":
 				instance.getSourceOSScriptList();
 				break;
 			case "source-get-os-variables":

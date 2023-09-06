@@ -26,7 +26,7 @@ get_os_variables() {
 
 run_source_os_hooks() {
     echo "Running sources pre-os scripts."
-    for source_os_script in $($app "$conf" source-os-config-list)
+    for source_os_script in $($app "$conf" source-os-script-list)
     do
         echo "Running script ${source_os_script}."
         source "${APP_DIR}/source-config/${source_os_script}"
