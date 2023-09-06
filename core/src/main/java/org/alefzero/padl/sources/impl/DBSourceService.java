@@ -20,7 +20,7 @@ public class DBSourceService extends PadlSourceService {
 		createPadlInfoTables();
 		insertObjectClasses();
 		insertAttributes();
-	}
+	} 
 
 	private void createPadlInfoTables() {
 		// TODO Auto-generated method stub

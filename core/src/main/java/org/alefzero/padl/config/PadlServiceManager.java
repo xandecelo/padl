@@ -67,9 +67,12 @@ public class PadlServiceManager {
 		JsonNode rootTree = mapper.readTree(configurationFile.toFile());
 		PadlConfig config = mapper.treeToValue(rootTree.get("general"), PadlConfig.class);
 
-		for (JsonNode setup : rootTree.get("sourceParameters")) {
-			PadlSourceFactory targetFactory = sourceFactories.get((setup.get("type").asText()));
-			targetFactory.setSourceParameters(mapper.treeToValue(setup, targetFactory.getSourceParameterClassType()));
+		JsonNode sourcesParameters = rootTree.get("sourceParameters");
+		if (sourcesParameters != null) {
+			for (JsonNode setup : rootTree.get("sourceParameters")) {
+				PadlSourceFactory targetFactory = sourceFactories.get((setup.get("type").asText()));
+				targetFactory.setSourceParameters(mapper.treeToValue(setup, targetFactory.getSourceParameterClassType()));
+			}
 		}
 
 		List<PadlSourceConfiguration> configSources = new LinkedList<PadlSourceConfiguration>();

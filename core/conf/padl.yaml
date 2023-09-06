@@ -4,15 +4,6 @@ general:
   instanceId: instance1
   suffix: dc=example,dc=org
   adminPassword: admin
-
-sourceParameters:
-- type: sql
-  dbUsername: user1
-  dbPassword: changeme
-  dbServer: localhost
-  dbPort: 3306
-  dbDatabase: backsql
-  
 sources:
 - id: ldap1
   type: proxy
