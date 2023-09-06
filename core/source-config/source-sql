@@ -1,10 +1,12 @@
 #!/bin/bash
 
-echo "Running backsql mariadb odbc configuration".
+id=$1
 
-eval $($app "$conf" source-get-os-variables sql)
+echo "Running backsql mariadb odbc configuration for $id".
 
-cat > database_template.ini << EOF 
+eval $($app "$conf" source-get-os-variables $id)
+
+cat > "database_template_$id.ini" << EOF 
 [backdb]
 Description=backdb connection
 Driver=MariaDB Unicode
@@ -15,6 +17,6 @@ DATABASE=${DB_DATABASE}
 PORT=${DB_PORT}
 EOF
 
-odbcinst -i -s -l -f database_template.ini
+odbcinst -i -s -l -f "database_template_$id.ini"
 
 echo "Done."

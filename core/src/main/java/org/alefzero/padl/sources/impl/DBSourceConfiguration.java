@@ -7,10 +7,9 @@ import org.alefzero.padl.sources.PadlSourceConfiguration;
 
 public class DBSourceConfiguration extends PadlSourceConfiguration {
 
-	private String jdbcURL;
-
-	private String username;
-	private String password;
+	private String sourceJdbcURL;
+	private String sourceUsername;
+	private String sourcePassword;
 
 	private String subtreeCond = "\"ldap_entries.dn LIKE CONCAT('%',?)\"";
 	private String insertEntryStatement = "\"insert into ldap_entries (dn,oc_map_id,parent,keyval) values (?,?,?,?)\"";
@@ -22,28 +21,28 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	private List<JoinData> joinData;
 	private List<String> objectClasses;
 
-	public String getJdbcURL() {
-		return jdbcURL;
+	public String getSourceJdbcURL() {
+		return sourceJdbcURL;
 	}
 
-	public void setJdbcURL(String jdbcURL) {
-		this.jdbcURL = jdbcURL;
+	public void setSourceJdbcURL(String sourceJdbcURL) {
+		this.sourceJdbcURL = sourceJdbcURL;
 	}
 
-	public String getUsername() {
-		return username;
+	public String getSourceUsername() {
+		return sourceUsername;
 	}
 
-	public void setUsername(String username) {
-		this.username = username;
+	public void setSourceUsername(String sourceUsername) {
+		this.sourceUsername = sourceUsername;
 	}
 
-	public String getPassword() {
-		return password;
+	public String getSourcePassword() {
+		return sourcePassword;
 	}
 
-	public void setPassword(String password) {
-		this.password = password;
+	public void setSourcePassword(String sourcePassword) {
+		this.sourcePassword = sourcePassword;
 	}
 
 	public String getSubtreeCond() {
@@ -179,6 +178,23 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 
 	public boolean hasOSPreScript() {
 		return true;
+	}
+
+	@Override
+	public String getOSEnv() {
+		var sb = new StringBuffer();
+		DBSourceParameters params = this.getFactory().getSourceParameters();
+		sb.append("DB_SERVER=").append(params.getDbServer());
+		sb.append(" DB_USERNAME=").append(params.getDbUsername());
+		sb.append(" DB_PASSWORD=").append(params.getDbPassword());
+		sb.append(" DB_DATABASE=").append(this.getDbDatabase());
+		sb.append(" DB_PORT=").append(params.getDbPort());
+		return sb.toString();
+	}
+
+	private String getDbDatabase() {
+		return String.format("%s_%s", ((DBSourceParameters) this.getFactory().getSourceParameters()).getDbDatabase(),
+				this.getId());
 	}
 
 }

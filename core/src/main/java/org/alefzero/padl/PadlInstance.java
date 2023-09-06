@@ -36,7 +36,7 @@ public class PadlInstance {
 	}
 
 	public void getSourceOSScriptList() {
-		System.out.print(String.join(" ",
+		System.out.println(String.join("\n",
 				config.getSourcesInConfigurationOrder().stream().filter(PadlSourceConfiguration::hasOSPreScript)
 						.map(PadlSourceConfiguration::getOSRequirementScript).collect(Collectors.toList())));
 	}
@@ -46,9 +46,10 @@ public class PadlInstance {
 		System.out.println(config.getLDIFSetupConfiguration());
 	}
 
-	public void getSourceParameterOSEnv(String sourceType) {
-		logger.trace(".getSourceParameterOSEnv [sourceType={}]", sourceType);
-		System.out.print(manager.getFactoryByType(sourceType).getSourceParameters().getOSEnv());
+	public void getSourceParameterOSEnv(String sourceId) {
+		logger.trace(".getSourceParameterOSEnv [sourceId={}]", sourceId);
+		System.out.print(manager.getSourceById(sourceId).getConfig().getOSEnv());
+
 	}
 
 	public void sync() {

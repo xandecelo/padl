@@ -4,6 +4,15 @@ general:
   instanceId: instance1
   suffix: dc=example,dc=org
   adminPassword: admin
+
+sourceParameters:
+- type: sql
+  dbUsername: dbuser
+  dbPassword: userpass
+  dbServer: dev.local
+  dbPort: 3306
+  dbDatabase: backsql
+
 sources:
 - id: ldap1
   type: proxy
@@ -37,7 +46,7 @@ sources:
   objectClasses: 
   - inetOrgPerson
 - id: sql_groups
-  enabled: false
+  enabled: true
   suffix: ou=groups,dc=example,dc=org
   dnFormat: cn=%s
   type: sql

@@ -87,6 +87,7 @@ public class PadlServiceManager {
 				service.setSourceParameters(serviceFactory.getSourceParameters());
 				service.setConfig(sourceConfig);
 				sourceConfig.setSource(service);
+				sourceConfig.setFactory(serviceFactory);
 				sourceServices.put(sourceConfig.getId(), service);
 			}
 		}

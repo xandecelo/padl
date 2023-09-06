@@ -27,10 +27,13 @@ get_os_variables() {
 
 run_source_os_hooks() {
     echo "Running sources pre-os scripts."
-    for source_os_script in $($app "$conf" source-os-script-list)
+    $app "$conf" source-os-script-list | cat
+    $app "$conf" source-os-script-list | while read source_os_script
     do
         echo "Running script ${source_os_script}."
-        source "${APP_DIR}/source-config/${source_os_script}"
+        pushd "${APP_DIR}/source-config"
+        source ${source_os_script}
+        popd
         echo "Script ${source_os_script} done".
     done
 }
@@ -57,10 +60,10 @@ ldap_start_sync() {
 check_yaml
 get_os_variables
 run_source_os_hooks
-test_connectivity
+test_connectivity``
 ldap_setup
 ldap_start_sync
-# echo "PADL LDAP is running. Press [q] and Enter to to quit."
-# while true; do IFS= read -d '' -n 1 ; [ "${REPLY,,}" = "q" ] && break; done
+echo "PADL LDAP is running. Press [q] and Enter to to quit."
+while true; do IFS= read -d '' -n 1 ; [ "${REPLY,,}" = "q" ] && break; done
 echo  "PADL is shutdown"
 exit 0

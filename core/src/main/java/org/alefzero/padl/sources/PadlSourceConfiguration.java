@@ -6,9 +6,9 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 
 	private PadlSourceFactory factory = null;
 	private PadlSourceService source = null;
-	
+
 	public abstract String getConfigurationLDIF();
-	
+
 	private String id;
 	private String type;
 	private String suffix;
@@ -66,9 +66,9 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 		this.reversedSuffix = new StringBuffer(suffix).reverse().toString();
 		return this;
 	}
-	
+
 	public String getOSRequirementScript() {
-		return hasOSPreScript() ? "source-" + this.getType().toLowerCase() : null;
+		return hasOSPreScript() ? String.format("source-%s %s", this.getType().toLowerCase(), this.getId()) : null;
 	}
 
 	public String getOSEnv() {
@@ -100,6 +100,5 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 	public void setSource(PadlSourceService source) {
 		this.source = source;
 	}
-
 
 }
