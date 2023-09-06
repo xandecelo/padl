@@ -3,7 +3,8 @@
 trap end_padl_app INT TERM ERR
 
 end_padl_app() {
-    echo "Error running app."
+    echo "Ending processes."
+    service slapd stop
     exit -1
 }
 
@@ -58,12 +59,8 @@ get_os_variables
 run_source_os_hooks
 test_connectivity
 ldap_setup
-echo "PADL LDAP is running. Press [q] and Enter to to quit."
-
 ldap_start_sync
-
-while true; do IFS= read -d '' -n 1 ; [ "${REPLY,,}" = "q" ] && break; done
-
-service slapd stop
-
+# echo "PADL LDAP is running. Press [q] and Enter to to quit."
+# while true; do IFS= read -d '' -n 1 ; [ "${REPLY,,}" = "q" ] && break; done
 echo  "PADL is shutdown"
+exit 0

@@ -6,6 +6,8 @@ public abstract class PadlSourceService {
 
 	private PadlSourceParameters sourceParameters;
 
+	public abstract void prepare();
+	
 	public abstract void sync();
 
 	public PadlSourceConfiguration getConfig() {

@@ -10,4 +10,10 @@ public class LdapProxySourceService extends PadlSourceService {
 		
 	}
 
+	@Override
+	public void prepare() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

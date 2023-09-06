@@ -7,8 +7,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
+import org.alefzero.padl.exceptions.PadlUnrecoverableError;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -92,6 +95,8 @@ public class App {
 
 	private void runSyncProcess(PadlInstance instance) {
 
+		instance.prepareSync();
+
 		Thread shutdownListener = new Thread() {
 			public void run() {
 				logger.info("Requesting padl processes to stop (10s)...");
@@ -108,7 +113,15 @@ public class App {
 		};
 
 		Runtime.getRuntime().addShutdownHook(shutdownListener);
-		// Thread.sleep(20);
+
+		try {
+			executor = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> instance.sync(), 0, 120,
+					TimeUnit.SECONDS);
+		} catch (PadlUnrecoverableError e) {
+			e.printStackTrace();
+			logger.error(e);
+		}
+
 		logger.info("Padl is done.");
 
 	}

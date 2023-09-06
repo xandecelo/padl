@@ -51,10 +51,20 @@ public class PadlInstance {
 		System.out.print(manager.getFactoryByType(sourceType).getSourceParameters().getOSEnv());
 	}
 
-	public void runSyncProcess() {
+	public void sync() {
+		System.out.println("Syncing process in action.");
 		for (var sourceConfig : config.getSourcesInConfigurationOrder()) {
 			PadlSourceService source = manager.getSourceById(sourceConfig.getId());
 			source.sync();
+		}
+	}
+
+	public void prepareSync() {
+		System.out.println("Preparing sync...");
+
+		for (var sourceConfig : config.getSourcesInConfigurationOrder()) {
+			PadlSourceService source = manager.getSourceById(sourceConfig.getId());
+			source.prepare();
 		}
 	}
 

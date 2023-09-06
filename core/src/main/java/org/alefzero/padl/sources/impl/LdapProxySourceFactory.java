@@ -1,5 +1,7 @@
 package org.alefzero.padl.sources.impl;
 
+import java.security.cert.LDAPCertStoreParameters;
+
 import org.alefzero.padl.sources.PadlSourceFactory;
 import org.alefzero.padl.sources.PadlSourceParameters;
 
@@ -41,9 +43,9 @@ public class LdapProxySourceFactory extends PadlSourceFactory {
 	}
 
 	@Override
-	public <T extends PadlSourceParameters> Class<T> getSourceParameterClassType() {
-		// TODO Auto-generated method stub
-		return null;
+	@SuppressWarnings("unchecked")
+	public Class<LDAPCertStoreParameters> getSourceParameterClassType() {
+		return LDAPCertStoreParameters.class;
 	}
 
 }
