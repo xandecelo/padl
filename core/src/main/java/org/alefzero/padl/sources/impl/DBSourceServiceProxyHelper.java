@@ -7,8 +7,11 @@ import java.sql.SQLException;
 import java.util.Random;
 
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DBSourceServiceProxyHelper {
+	protected static final Logger logger = LogManager.getLogger();
 
 	private BasicDataSource adminBds = null;
 	private BasicDataSource bds = null;
@@ -24,8 +27,8 @@ public class DBSourceServiceProxyHelper {
 			adminBds = new BasicDataSource();
 			adminBds.setUrl(String.format("jdbc:mariadb://%s:%d/%s", params.getDbServer(), params.getDbPort(),
 					"information_schema"));
-			adminBds.setUsername(params.getDbUsername());
-			adminBds.setPassword(params.getDbPassword());
+			adminBds.setUsername(this.params.getDbUsername());
+			adminBds.setPassword(this.params.getDbPassword());
 			adminBds.setMaxTotal(2);
 			adminBds.setMinIdle(1);
 			adminBds.setCacheState(false);
@@ -52,24 +55,27 @@ public class DBSourceServiceProxyHelper {
 	}
 
 	public void cleanDatabases() {
-
+		logger.debug("Running cleaning database process with base name [basename='{}", getDatabaseBaseName() + "%']");
 		try (Connection conn = adminBds.getConnection()) {
-			PreparedStatement ps = conn
-					.prepareStatement("select schema_name from information_schema.schemata where schema_name like ?");
+			PreparedStatement ps = conn.prepareStatement(
+					"select schema_name from information_schema.schemata where schema_name like ? order by 1");
 			ps.setString(1, getDatabaseBaseName() + "%");
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
-				System.out.println(rs.getString(1));
+				logger.debug("Removing schema {}.", rs.getString(1));
+				PreparedStatement psRemove = conn.prepareStatement("drop database " + rs.getString(1));
+				psRemove.executeUpdate();
+				psRemove.close();
 			}
 			rs.close();
 			ps.close();
+			PreparedStatement psCreate = conn.prepareStatement("create database " + this.getDatabaseName());
+			psCreate.executeUpdate();
+			psCreate.close();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		// TODO read all the metadata for database with a base and drop them all
-		// TODO create a new database
-		// TODO create a new set of tables
 
 	}
 
@@ -79,7 +85,74 @@ public class DBSourceServiceProxyHelper {
 	}
 
 	public void createOpenldapTables() {
-		// TODO Create all table structure for openldap
+		logger.debug("Creating metadata tables");
+
+		this.sqlUpdate("""
+				create table ldap_oc_mappings
+				(
+					id integer unsigned not null primary key auto_increment,
+					name varchar(64) not null,
+					keytbl varchar(64) not null,
+					keycol varchar(64) not null,
+					create_proc varchar(255),
+					delete_proc varchar(255),
+					expect_return tinyint not null
+				)
+				""");
+		this.sqlUpdate("""
+				create table ldap_attr_mappings
+				(
+					id integer unsigned not null primary key auto_increment,
+					oc_map_id integer unsigned not null references ldap_oc_mappings(id),
+					name varchar(255) not null,
+					sel_expr varchar(255) not null,
+					sel_expr_u varchar(255),
+					from_tbls varchar(255) not null,
+					join_where varchar(255),
+					add_proc varchar(255),
+					delete_proc varchar(255),
+					param_order tinyint not null,
+					expect_return tinyint not null
+				)
+
+				""");
+
+		this.sqlUpdate("""
+				create table ldap_entries
+				(
+					id integer unsigned not null primary key auto_increment,
+					dn varchar(255) not null,
+					oc_map_id integer unsigned not null references ldap_oc_mappings(id),
+					parent int NOT NULL ,
+					keyval int NOT NULL
+				)
+				""");
+
+		this.sqlUpdate("""
+				alter table ldap_entries add
+				constraint unq1_ldap_entries unique
+				(
+					oc_map_id,
+					keyval
+				)
+				""");
+		
+		this.sqlUpdate("""
+				alter table ldap_entries add
+				constraint unq2_ldap_entries unique
+				(
+					dn
+				)
+				""");
+		
+		this.sqlUpdate("""
+				create table ldap_entry_objclasses
+				(
+					entry_id integer unsigned not null references ldap_entries(id),
+					oc_name varchar(64)
+				)
+				""");
+		
 		this.loadOpenldapMappings();
 		this.loadOpenldapAttributes();
 		this.createLdapSuffixEntry();
@@ -91,13 +164,38 @@ public class DBSourceServiceProxyHelper {
 	}
 
 	private void loadOpenldapMappings() {
-		// TODO load all data to oc_mappings from objectClasses
 
 	}
 
-	private void loadOpenldapAttributes() {
-		// TODO load all data to attr_mappings from config (?).
+	private void sqlUpdate(String sql) {
+		try (Connection conn = bds.getConnection()) {
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.executeUpdate();
+			ps.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 
+	private void loadOpenldapAttributes() {
+	}
+
+	public static void main(String[] args) {
+		DBSourceParameters params;
+		DBSourceConfiguration config;
+		params = new DBSourceParameters();
+		params.setDbDatabase("sql");
+		params.setDbUsername("dbuser");
+		params.setDbPassword("userpass");
+		params.setDbServer("dev.local");
+		params.setDbPort(3306);
+
+		config = new DBSourceConfiguration();
+		config.setInstanceId("instance1");
+		config.setId("source1");
+		DBSourceServiceProxyHelper test = new DBSourceServiceProxyHelper(params, config);
+		test.cleanDatabases();
+		test.createOpenldapTables();
 	}
 
 }

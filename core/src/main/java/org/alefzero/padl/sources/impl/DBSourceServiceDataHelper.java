@@ -1,5 +1,6 @@
 package org.alefzero.padl.sources.impl;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class DBSourceServiceDataHelper {
@@ -12,7 +13,7 @@ public class DBSourceServiceDataHelper {
 
 	public List<String> getTableDefinitions() {
 		// TODO Auto-generated method stub
-		return null;
+		return new LinkedList<String>();
 	}
 
 }
