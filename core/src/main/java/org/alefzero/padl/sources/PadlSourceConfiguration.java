@@ -8,6 +8,8 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 	private PadlSourceService source = null;
 
 	public abstract String getConfigurationLDIF();
+	
+	private String instanceId;
 
 	private String id;
 	private String type;
@@ -99,6 +101,14 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 
 	public void setSource(PadlSourceService source) {
 		this.source = source;
+	}
+
+	public String getInstanceId() {
+		return instanceId;
+	}
+
+	public void setInstanceId(String instanceId) {
+		this.instanceId = instanceId;
 	}
 
 }

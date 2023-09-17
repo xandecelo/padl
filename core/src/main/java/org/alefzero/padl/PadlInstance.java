@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 public class PadlInstance {
 	protected static final Logger logger = LogManager.getLogger();
-
+	
 	private PadlServiceManager manager;
 	private PadlConfig config;
 

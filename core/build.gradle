@@ -16,6 +16,10 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-jcl:2.20.0'
     implementation 'commons-logging:commons-logging:1.2'
 
+    // Sql control
+    implementation 'org.mariadb.jdbc:mariadb-java-client:3.1.0'
+    implementation 'org.apache.commons:commons-dbcp2:2.9.0'
+    
     // Jackson YAML processor
     implementation 'com.fasterxml.jackson.core:jackson-core:2.14.2'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'

@@ -58,11 +58,13 @@ public class PadlConfig {
 	}
 
 	public List<PadlSourceConfiguration> getSources() {
+		this.sources.forEach(source -> source.setInstanceId(this.getInstanceId()));
 		return sources;
 	}
 
 	public PadlConfig setSources(List<PadlSourceConfiguration> sources) {
 		this.sources = sources;
+		this.sources.forEach(source -> source.setInstanceId(this.getInstanceId()));
 		return this;
 	}
 

@@ -2,6 +2,7 @@ package org.alefzero.padl.sources.impl;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import org.alefzero.padl.sources.PadlSourceConfiguration;
 
@@ -20,6 +21,8 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	private String[] attributes;
 	private List<JoinData> joinData;
 	private List<String> objectClasses;
+	
+	private static Integer randomId = new Random().nextInt(99_999);
 
 	public String getSourceJdbcURL() {
 		return sourceJdbcURL;
@@ -187,14 +190,19 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		sb.append("DB_SERVER=").append(params.getDbServer());
 		sb.append(" DB_USERNAME=").append(params.getDbUsername());
 		sb.append(" DB_PASSWORD=").append(params.getDbPassword());
-		sb.append(" DB_DATABASE=").append(this.getDbDatabase());
+		sb.append(" DB_DATABASE=").append(this.getDbDatabaseId());
 		sb.append(" DB_PORT=").append(params.getDbPort());
 		return sb.toString();
 	}
 
-	private String getDbDatabase() {
+	protected String getDbDatabaseBase() {
 		return String.format("%s_%s", ((DBSourceParameters) this.getFactory().getSourceParameters()).getDbDatabase(),
 				this.getId());
 	}
-
+	
+	protected String getDbDatabaseId() {
+		return String.format("%s_%s_%5d", ((DBSourceParameters) this.getFactory().getSourceParameters()).getDbDatabase(),
+				this.getId(), randomId);
+	}
+	
 }

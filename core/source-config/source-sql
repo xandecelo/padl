@@ -7,7 +7,7 @@ echo "Running backsql mariadb odbc configuration for $id".
 eval $($app "$conf" source-get-os-variables $id)
 
 cat > "database_template_$id.ini" << EOF 
-[backdb]
+[${DB_DATABASE}]
 Description=backdb connection
 Driver=MariaDB Unicode
 SERVER=${DB_SERVER}
