@@ -57,7 +57,7 @@ public class DBSourceServiceProxyHelper {
 	}
 
 	private String getDatabaseName() {
-		return String.format("%s_%5d", getDatabaseBaseName(), randomId);
+		return String.format("%s_%05d", getDatabaseBaseName(), randomId);
 	}
 
 	private String getDatabaseBaseName() {
@@ -97,12 +97,12 @@ public class DBSourceServiceProxyHelper {
 				PreparedStatement ps = conn.prepareStatement(createSQL);
 				ps.executeUpdate();
 				ps.close();
-				
+
 				createSQL = getSQLFor(tableName + "_temp", td.get(tableName));
 				ps = conn.prepareStatement(createSQL);
 				ps.executeUpdate();
 				ps.close();
-				
+
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -112,7 +112,7 @@ public class DBSourceServiceProxyHelper {
 
 	private String getSQLFor(String tableName, ResultSetMetaData resultSetMetaData) throws SQLException {
 		String sql = """
-				create or replace table %s ( %s )
+				create or replace table %s (padl_source_id serial, %s )
 				""";
 
 		List<String> cols = new LinkedList<String>();
