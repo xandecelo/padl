@@ -159,7 +159,7 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		}
 
 		public String getMetaTableName() {
-			return outerId + this.getId();
+			return String.format("%s_%s", outerId, id);
 		}
 
 		public String getOuterId() {

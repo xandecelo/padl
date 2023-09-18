@@ -1,5 +1,8 @@
 package org.alefzero.padl.sources.impl;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.alefzero.padl.sources.PadlSourceService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,6 +66,15 @@ public class DBSourceService extends PadlSourceService {
 		config.setSourceUsername("dbuser");
 		config.setSourcePassword("userpass");
 
+		List<DBSourceConfiguration.JoinData> list = new LinkedList<DBSourceConfiguration.JoinData>();
+		
+		DBSourceConfiguration.JoinData join = new DBSourceConfiguration.JoinData();
+		join.setId("groups");
+		join.setQuery("select * from groups");
+		list.add(join);
+		
+		config.setJoinData(list);
+		
 		DBSourceService test = new DBSourceService();
 		test.setConfig(config);
 		test.setSourceParameters(params);
