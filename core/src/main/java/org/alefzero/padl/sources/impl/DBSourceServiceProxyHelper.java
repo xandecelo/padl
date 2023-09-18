@@ -97,6 +97,12 @@ public class DBSourceServiceProxyHelper {
 				PreparedStatement ps = conn.prepareStatement(createSQL);
 				ps.executeUpdate();
 				ps.close();
+				
+				createSQL = getSQLFor(tableName + "_temp", td.get(tableName));
+				ps = conn.prepareStatement(createSQL);
+				ps.executeUpdate();
+				ps.close();
+				
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
