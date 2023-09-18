@@ -216,9 +216,9 @@ public class DBSourceServiceProxyHelper {
 
 	}
 
-	public void createPadlSyncTables() {
+	public void createDNSuffixTable() {
 		this.sqlUpdate("""
-				create or replace table orgs (orgid integer(5), org varchar(30))
+				create or replace table suffix (suffix_id integer(5), suffix varchar(100))
 				""");
 
 	}

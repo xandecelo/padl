@@ -39,9 +39,10 @@ public class DBSourceService extends PadlSourceService {
 
 		proxyHelper.cleanDatabases();
 		proxyHelper.createOpenldapTables();
-		proxyHelper.loadOpenldapMappings();
-		proxyHelper.createPadlSyncTables();
+		proxyHelper.createDNSuffixTable();
 		proxyHelper.createTables(dataHelper.getTableDefinitions());
+		proxyHelper.loadOpenldapMappings();
+		
 
 	}
 
