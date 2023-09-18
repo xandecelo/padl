@@ -3,7 +3,13 @@ package org.alefzero.padl.sources.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -13,11 +19,15 @@ import org.apache.logging.log4j.Logger;
 public class DBSourceServiceProxyHelper {
 	protected static final Logger logger = LogManager.getLogger();
 
+	private static final Integer ORG_UNIT_OBJECT_CLASS_ID = 1;
+
 	private BasicDataSource adminBds = null;
 	private BasicDataSource bds = null;
 	private DBSourceParameters params;
 	private DBSourceConfiguration config;
 	private static Integer randomId = new Random().nextInt(99_999);
+
+	private Map<Integer, String> objectClasses = new HashMap<Integer, String>();
 
 	public DBSourceServiceProxyHelper(DBSourceParameters params, DBSourceConfiguration config) {
 		this.params = params;
@@ -79,9 +89,54 @@ public class DBSourceServiceProxyHelper {
 
 	}
 
-	public Boolean createTable(String tableDefinition) {
-		// TODO Create a table with definition at proxy database
-		return null;
+	public boolean createTables(Map<String, ResultSetMetaData> td) {
+		boolean result = true;
+		try (Connection conn = bds.getConnection()) {
+			for (String tableName : td.keySet()) {
+				String createSQL = getSQLFor(tableName, td.get(tableName));
+				PreparedStatement ps = conn.prepareStatement(createSQL);
+				ps.executeUpdate();
+				ps.close();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	private String getSQLFor(String tableName, ResultSetMetaData resultSetMetaData) throws SQLException {
+		String sql = """
+				create or replace table %s ( %s )
+				""";
+
+		List<String> cols = new LinkedList<String>();
+
+		for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+			String precision;
+			if (resultSetMetaData.getScale(i) > 0) {
+				precision = String.format("(%d,%d)", resultSetMetaData.getPrecision(i), resultSetMetaData.getScale(i));
+			} else {
+				precision = String.format("(%d)", resultSetMetaData.getPrecision(i));
+			}
+			cols.add(String.format("%s %s %s", resultSetMetaData.getColumnName(i),
+					getMariaDBTypeName(resultSetMetaData.getColumnType(i)), precision));
+		}
+		return String.format(sql, tableName, String.join(",", cols));
+	}
+
+	private String getMariaDBTypeName(int columnType) {
+		String type;
+		switch (columnType) {
+		case Types.NUMERIC:
+		case Types.DECIMAL:
+			type = "DECIMAL";
+			break;
+		case Types.VARCHAR:
+		case Types.NVARCHAR:
+		default:
+			type = "VARCHAR";
+		}
+		return type;
 	}
 
 	public void createOpenldapTables() {
@@ -136,7 +191,7 @@ public class DBSourceServiceProxyHelper {
 					keyval
 				)
 				""");
-		
+
 		this.sqlUpdate("""
 				alter table ldap_entries add
 				constraint unq2_ldap_entries unique
@@ -144,7 +199,7 @@ public class DBSourceServiceProxyHelper {
 					dn
 				)
 				""");
-		
+
 		this.sqlUpdate("""
 				create table ldap_entry_objclasses
 				(
@@ -152,19 +207,18 @@ public class DBSourceServiceProxyHelper {
 					oc_name varchar(64)
 				)
 				""");
-		
-		this.loadOpenldapMappings();
-		this.loadOpenldapAttributes();
-		this.createLdapSuffixEntry();
-	}
-
-	private void createLdapSuffixEntry() {
-		// TODO think about it
 
 	}
 
-	private void loadOpenldapMappings() {
+	public void createPadlSyncTables() {
+		this.sqlUpdate("""
+				create or replace table orgs (orgid integer(5), org varchar(30))
+				""");
 
+	}
+
+	public void loadOpenldapMappings() {
+		objectClasses.put(ORG_UNIT_OBJECT_CLASS_ID, "organizationalUnit");
 	}
 
 	private void sqlUpdate(String sql) {
@@ -175,27 +229,6 @@ public class DBSourceServiceProxyHelper {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-	}
-
-	private void loadOpenldapAttributes() {
-	}
-
-	public static void main(String[] args) {
-		DBSourceParameters params;
-		DBSourceConfiguration config;
-		params = new DBSourceParameters();
-		params.setDbDatabase("sql");
-		params.setDbUsername("dbuser");
-		params.setDbPassword("userpass");
-		params.setDbServer("dev.local");
-		params.setDbPort(3306);
-
-		config = new DBSourceConfiguration();
-		config.setInstanceId("instance1");
-		config.setId("source1");
-		DBSourceServiceProxyHelper test = new DBSourceServiceProxyHelper(params, config);
-		test.cleanDatabases();
-		test.createOpenldapTables();
 	}
 
 }

@@ -21,7 +21,7 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	private String[] attributes;
 	private List<JoinData> joinData;
 	private List<String> objectClasses;
-	
+
 	private static Integer randomId = new Random().nextInt(99_999);
 
 	public String getSourceJdbcURL() {
@@ -101,6 +101,7 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	}
 
 	public void setJoinData(List<JoinData> joinData) {
+		joinData.forEach(item -> item.setOuterId(this.getId()));
 		this.joinData = joinData;
 	}
 
@@ -112,7 +113,13 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		this.objectClasses = objectClasses;
 	}
 
+	public String getMetaTableName() {
+		return this.getId();
+	}
+
 	public static class JoinData {
+
+		private String outerId = "";
 
 		private String id;
 		private String query;
@@ -149,6 +156,18 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 
 		public void setAttributes(String[] attributes) {
 			this.attributes = attributes;
+		}
+
+		public String getMetaTableName() {
+			return outerId + this.getId();
+		}
+
+		public String getOuterId() {
+			return outerId;
+		}
+
+		public void setOuterId(String outerId) {
+			this.outerId = outerId;
 		}
 
 		@Override
@@ -199,10 +218,10 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		return String.format("%s_%s", ((DBSourceParameters) this.getFactory().getSourceParameters()).getDbDatabase(),
 				this.getId());
 	}
-	
+
 	protected String getDbDatabaseId() {
-		return String.format("%s_%s_%5d", ((DBSourceParameters) this.getFactory().getSourceParameters()).getDbDatabase(),
-				this.getId(), randomId);
+		return String.format("%s_%s_%5d",
+				((DBSourceParameters) this.getFactory().getSourceParameters()).getDbDatabase(), this.getId(), randomId);
 	}
-	
+
 }

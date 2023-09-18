@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 
 public class DBSourceService extends PadlSourceService {
 	protected static final Logger logger = LogManager.getLogger();
+
 	private DBSourceParameters params;
 	private DBSourceConfiguration config;
 
@@ -23,18 +24,49 @@ public class DBSourceService extends PadlSourceService {
 
 	@Override
 	public void prepare() {
+		System.out.println(this.getConfig());
+		
 		logger.debug("Preparing sync for {} with id {}.", this.getConfig().getType(), this.getConfig().getId());
-
+		
+		params = (DBSourceParameters) this.getSourceParameters();
+		config = (DBSourceConfiguration) this.getConfig();
+		
 		proxyHelper = new DBSourceServiceProxyHelper(params, config);
 		dataHelper = new DBSourceServiceDataHelper(config);
 
 		proxyHelper.cleanDatabases();
 		proxyHelper.createOpenldapTables();
-		
-		
-		dataHelper.getTableDefinitions().forEach(tableDefinition -> proxyHelper.createTable(tableDefinition));
-
+		proxyHelper.loadOpenldapMappings();
+		proxyHelper.createPadlSyncTables();
+		proxyHelper.createTables(dataHelper.getTableDefinitions());
 
 	}
 
+	public static void main(String[] args) {
+		DBSourceParameters params;
+		DBSourceConfiguration config;
+		
+		params = new DBSourceParameters();
+		params.setDbDatabase("sql");
+		params.setDbUsername("dbuser");
+		params.setDbPassword("userpass");
+		params.setDbServer("dev.local");
+		params.setDbPort(3306);
+
+		config = new DBSourceConfiguration();
+		config.setInstanceId("instance1");
+		config.setId("source1");
+		config.setType("sql");
+		config.setQuery("select * from users");
+		//config.setQuery("select uid, email, name, surname, phone from users");
+		config.setSourceJdbcURL("jdbc:mariadb://dev.local:3306/source");
+		config.setSourceUsername("dbuser");
+		config.setSourcePassword("userpass");
+
+		DBSourceService test = new DBSourceService();
+		test.setConfig(config);
+		test.setSourceParameters(params);
+		test.prepare();
+		System.out.println("Done");
+	}
 }
