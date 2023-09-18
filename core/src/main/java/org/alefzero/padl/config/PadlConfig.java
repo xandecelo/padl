@@ -65,6 +65,7 @@ public class PadlConfig {
 	public PadlConfig setSources(List<PadlSourceConfiguration> sources) {
 		this.sources = sources;
 		this.sources.forEach(source -> source.setInstanceId(this.getInstanceId()));
+		this.sources.forEach(source -> source.setBaseSuffix(this.getSuffix()));
 		return this;
 	}
 

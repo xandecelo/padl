@@ -10,8 +10,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
+import org.alefzero.padl.sources.impl.DBSourceConfiguration.JoinData;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,7 +29,8 @@ public class DBSourceServiceProxyHelper {
 	private BasicDataSource bds = null;
 	private DBSourceParameters params;
 	private DBSourceConfiguration config;
-	private static Integer randomId = new Random().nextInt(99_999);
+//	private static Integer randomId = new Random().nextInt(99_999);
+	private static Integer randomId = 0;
 
 	private Map<Integer, String> objectClasses = new HashMap<Integer, String>();
 
@@ -258,12 +259,12 @@ public class DBSourceServiceProxyHelper {
 			ps.setInt(i++, 0);
 			ps.executeUpdate();
 			ps.close();
-			
+
 			ps = conn.prepareStatement("insert into " + SUFFIXES_TABLE + "(suffix) values (?)");
-			ps.setString(1, config.getSuffix());
+			ps.setString(1, config.getSuffixName());
 			ps.executeUpdate();
 			ps.close();
-			
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -277,6 +278,59 @@ public class DBSourceServiceProxyHelper {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void loadAttributes() {
+		String sql = """
+				insert into ldap_attr_mappings (oc_map_id,name,sel_expr,from_tbls,join_where,add_proc,delete_proc,param_order,expect_return)
+				values (?,?,?,?,?,NULL,NULL,?,?);
+				""";
+		try (Connection conn = bds.getConnection()) {
+			PreparedStatement ps = conn.prepareStatement(sql);
+			int i = 1;
+			ps.setInt(i++, SUFFIX_OBJECT_CLASS_ID);
+			ps.setString(i++, config.getSuffixType());
+			ps.setString(i++, "suffix");
+			ps.setString(i++, SUFFIXES_TABLE);
+			ps.setNull(i++, Types.VARCHAR);
+			ps.setInt(i++, 0);
+			ps.setInt(i++, 0);
+			ps.executeUpdate();
+
+			for (String ldapAttrib : config.getLdaptodb().keySet()) {
+				i = 1;
+				ps.setInt(i++, PROXY_OBJECT_CLASS_ID);
+				ps.setString(i++, ldapAttrib);
+				ps.setString(i++, config.getLdaptodb().get(ldapAttrib));
+				ps.setString(i++, config.getMetaTableName());
+				ps.setNull(i++, Types.VARCHAR);
+				ps.setInt(i++, 0);
+				ps.setInt(i++, 0);
+				ps.executeUpdate();
+			}
+
+			for (JoinData join : config.getJoinData()) {
+				for (String ldapAttrib : join.getLdaptodb().keySet()) {
+					i = 1;
+					ps.setInt(i++, PROXY_OBJECT_CLASS_ID);
+					ps.setString(i++, ldapAttrib);
+					ps.setString(i++,
+							String.format("%s.%s", join.getMetaTableName(), join.getLdaptodb().get(ldapAttrib)));
+					ps.setString(i++, String.format("%s,%s", config.getMetaTableName(), join.getMetaTableName()));
+					ps.setString(i++, String.format("%s.%s=%s.%s", config.getMetaTableName(),
+							join.getJoinColumnFromSource(), join.getMetaTableName(), join.getJoinColumnFromJoin()));
+					ps.setInt(i++, 0);
+					ps.setInt(i++, 0);
+					ps.executeUpdate();
+				}
+
+			}
+			ps.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 }

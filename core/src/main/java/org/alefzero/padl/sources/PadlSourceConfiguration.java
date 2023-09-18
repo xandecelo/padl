@@ -8,7 +8,7 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 	private PadlSourceService source = null;
 
 	public abstract String getConfigurationLDIF();
-	
+
 	private String instanceId;
 
 	private String id;
@@ -17,6 +17,7 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 	private String reversedSuffix;
 	private String rootDN;
 	private Boolean enabled = true;
+	private String baseSuffix = "";
 
 	public String getRootDN() {
 		return rootDN;
@@ -109,6 +110,14 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 
 	public void setInstanceId(String instanceId) {
 		this.instanceId = instanceId;
+	}
+
+	public String getBaseSuffix() {
+		return baseSuffix;
+	}
+
+	public void setBaseSuffix(String baseSuffix) {
+		this.baseSuffix = baseSuffix;
 	}
 
 }

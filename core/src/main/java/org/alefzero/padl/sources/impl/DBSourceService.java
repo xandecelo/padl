@@ -43,6 +43,7 @@ public class DBSourceService extends PadlSourceService {
 		proxyHelper.createDNSuffixTable();
 		proxyHelper.createTables(dataHelper.getTableDefinitions());
 		proxyHelper.loadOpenldapMappings();
+		proxyHelper.loadAttributes();
 
 	}
 
@@ -68,12 +69,16 @@ public class DBSourceService extends PadlSourceService {
 		config.setSourcePassword("userpass");
 		config.setObjectClasses(Arrays.asList(new String[] { "inetOrgPerson" }));
 		config.setSuffix("ou=users,dc=example,dc=org");
-		
+		config.setBaseSuffix("dc=example,dc=org");
+		config.setAttributes(
+				new String[] { "givenName=first_name", " sn=surname", "cn=username", " telephoneNumber=phone" });
 		List<DBSourceConfiguration.JoinData> list = new LinkedList<DBSourceConfiguration.JoinData>();
 
 		DBSourceConfiguration.JoinData join = new DBSourceConfiguration.JoinData();
 		join.setId("groups");
-		join.setQuery("select * from groups");
+		join.setQuery("select groupname from groups a inner join users b on a.username = b.uid");
+		join.setAttributes(new String[] { "memberOf=groupname" });
+		join.setJoinColumns("uid=username");
 		list.add(join);
 
 		config.setJoinData(list);

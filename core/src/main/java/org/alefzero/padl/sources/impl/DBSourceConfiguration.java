@@ -2,7 +2,9 @@ package org.alefzero.padl.sources.impl;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 
 import org.alefzero.padl.sources.PadlSourceConfiguration;
 
@@ -21,6 +23,9 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	private String[] attributes;
 	private List<JoinData> joinData;
 	private List<String> objectClasses;
+
+	private Map<String, String> ldaptodb = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+	private Map<String, String> dbtoldap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 
 	private static Integer randomId = new Random().nextInt(99_999);
 
@@ -94,6 +99,15 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 
 	public void setAttributes(String[] attributes) {
 		this.attributes = attributes;
+		getLdaptodb().clear();
+		getDbtoldap().clear();
+		for (String att : attributes) {
+			String[] split = att.split("=");
+			String ldap = split[0];
+			String db = split.length == 1 ? ldap : split[1];
+			getLdaptodb().put(ldap, db);
+			getDbtoldap().put(db, ldap);
+		}
 	}
 
 	public List<JoinData> getJoinData() {
@@ -120,15 +134,17 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	public String getMainObjectClass() {
 		return this.objectClasses.get(0);
 	}
-	
+
 	public static class JoinData {
 
 		private String outerId = "";
 
 		private String id;
 		private String query;
-		private String idJoinColumnFilter;
+		private String joinColumns;
 		private String[] attributes;
+		private Map<String, String> ldaptodb = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+		private Map<String, String> dbtoldap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 
 		public String getId() {
 			return id;
@@ -138,28 +154,21 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 			this.id = id;
 		}
 
-		public String getQuery() {
-			return query;
-		}
-
-		public void setQuery(String query) {
-			this.query = query;
-		}
-
-		public String getIdJoinColumnFilter() {
-			return idJoinColumnFilter;
-		}
-
-		public void setIdJoinColumnFilter(String idJoinColumnFilter) {
-			this.idJoinColumnFilter = idJoinColumnFilter;
-		}
-
 		public String[] getAttributes() {
 			return attributes;
 		}
 
 		public void setAttributes(String[] attributes) {
 			this.attributes = attributes;
+			getLdaptodb().clear();
+			getDbtoldap().clear();
+			for (String att : attributes) {
+				String[] split = att.split("=");
+				String ldap = split[0];
+				String db = split.length == 0 ? ldap : split[1];
+				getLdaptodb().put(ldap, db);
+				getDbtoldap().put(db, ldap);
+			}
 		}
 
 		public String getMetaTableName() {
@@ -174,10 +183,52 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 			this.outerId = outerId;
 		}
 
+		public Map<String, String> getLdaptodb() {
+			return ldaptodb;
+		}
+
+		public void setLdaptodb(Map<String, String> ldaptodb) {
+			this.ldaptodb = ldaptodb;
+		}
+
+		public Map<String, String> getDbtoldap() {
+			return dbtoldap;
+		}
+
+		public void setDbtoldap(Map<String, String> dbtoldap) {
+			this.dbtoldap = dbtoldap;
+		}
+
+		public String getQuery() {
+			return query;
+		}
+
+		public void setQuery(String query) {
+			this.query = query;
+		}
+
+		public String getJoinColumns() {
+			return joinColumns;
+		}
+
+		public void setJoinColumns(String idJoinColumnFilter) {
+			this.joinColumns = idJoinColumnFilter;
+		}
+
+		public String getJoinColumnFromSource() {
+			return joinColumns.split("=")[0];
+		}
+
+		public String getJoinColumnFromJoin() {
+			String[] split = joinColumns.split("=");
+			return split.length == 1 ? split[0] : split[1];
+		}
+
 		@Override
 		public String toString() {
-			return "JoinData [id=" + id + ", query=" + query + ", idJoinColumnFilter=" + idJoinColumnFilter
-					+ ", attributes=" + Arrays.toString(attributes) + "]";
+			return "JoinData [outerId=" + outerId + ", id=" + id + ", query=" + query + ", joinColumns=" + joinColumns
+					+ ", attributes=" + Arrays.toString(attributes) + ", ldaptodb=" + ldaptodb + ", dbtoldap="
+					+ dbtoldap + "]";
 		}
 
 	}
@@ -226,6 +277,32 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	protected String getDbDatabaseId() {
 		return String.format("%s_%s_%5d",
 				((DBSourceParameters) this.getFactory().getSourceParameters()).getDbDatabase(), this.getId(), randomId);
+	}
+
+	public String getSuffixType() {
+		String simpleSuffix = getSuffix().replace(getBaseSuffix(), "");
+		return simpleSuffix.split("=")[0];
+	}
+
+	public String getSuffixName() {
+		String simpleSuffix = getSuffix().replace(getBaseSuffix(), "");
+		return simpleSuffix.split("=")[1].replace(",", "");
+	}
+
+	public Map<String, String> getLdaptodb() {
+		return ldaptodb;
+	}
+
+	public void setLdaptodb(Map<String, String> ldaptodb) {
+		this.ldaptodb = ldaptodb;
+	}
+
+	public Map<String, String> getDbtoldap() {
+		return dbtoldap;
+	}
+
+	public void setDbtoldap(Map<String, String> dbtoldap) {
+		this.dbtoldap = dbtoldap;
 	}
 
 }

@@ -29,7 +29,7 @@ sources:
   attributes:
   - givenName=first_name
   - sn=surname
-  - cn=full_name
+  - cn=username
   - telephoneNumber=phone
   joinData:
   - id: data1
@@ -40,9 +40,9 @@ sources:
             on a.groupid = b.groupid
             inner join users c
             on b.username = c.username
-    idJoinColumnFilter: username  
+    joinColumns: username=username
     attributes:
-    - memberOf=groupname
+    - memberOf=a.groupname
   objectClasses: 
   - inetOrgPerson
 - id: sql_groups
@@ -62,7 +62,7 @@ sources:
             on a.groupid = b.groupid
             inner join users c
             on b.username = c.username
-    idJoinColumnFilter: groupname  
+    joinColumns: groupname  
     attributes:
     - member=username
   objectClasses: 
