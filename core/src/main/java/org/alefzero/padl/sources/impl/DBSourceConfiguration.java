@@ -117,6 +117,10 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		return this.getId();
 	}
 
+	public String getMainObjectClass() {
+		return this.objectClasses.get(0);
+	}
+	
 	public static class JoinData {
 
 		private String outerId = "";

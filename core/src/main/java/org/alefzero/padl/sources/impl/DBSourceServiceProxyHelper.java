@@ -19,7 +19,11 @@ import org.apache.logging.log4j.Logger;
 public class DBSourceServiceProxyHelper {
 	protected static final Logger logger = LogManager.getLogger();
 
-	private static final Integer ORG_UNIT_OBJECT_CLASS_ID = 1;
+	private static final Integer SUFFIX_OBJECT_CLASS_ID = 1;
+
+	private static final int PROXY_OBJECT_CLASS_ID = 2;
+
+	private static final String SUFFIXES_TABLE = "suffixes";
 
 	private BasicDataSource adminBds = null;
 	private BasicDataSource bds = null;
@@ -217,14 +221,52 @@ public class DBSourceServiceProxyHelper {
 	}
 
 	public void createDNSuffixTable() {
-		this.sqlUpdate("""
-				create or replace table suffix (suffix_id integer(5), suffix varchar(100))
-				""");
+		this.sqlUpdate(
+
+				String.format("""
+						create or replace table %s (suffix_id serial, suffix varchar(100))
+						""", SUFFIXES_TABLE));
 
 	}
 
 	public void loadOpenldapMappings() {
-		objectClasses.put(ORG_UNIT_OBJECT_CLASS_ID, "organizationalUnit");
+
+		objectClasses.put(SUFFIX_OBJECT_CLASS_ID, "organizationalUnit");
+		try (Connection conn = bds.getConnection()) {
+			PreparedStatement ps = conn.prepareStatement("""
+					insert into ldap_oc_mappings (id,name,keytbl,keycol,create_proc,delete_proc,expect_return)
+					values (?,?,?,?,?,?,?)
+					""");
+
+			int i = 1;
+			ps.setInt(i++, SUFFIX_OBJECT_CLASS_ID);
+			ps.setString(i++, "organizationalUnit");
+			ps.setString(i++, SUFFIXES_TABLE);
+			ps.setString(i++, "suffix_id");
+			ps.setNull(i++, Types.VARCHAR);
+			ps.setNull(i++, Types.VARCHAR);
+			ps.setInt(i++, 0);
+			ps.executeUpdate();
+
+			i = 1;
+			ps.setInt(i++, PROXY_OBJECT_CLASS_ID);
+			ps.setString(i++, config.getMainObjectClass());
+			ps.setString(i++, config.getMetaTableName());
+			ps.setString(i++, "padl_source_id");
+			ps.setNull(i++, Types.VARCHAR);
+			ps.setNull(i++, Types.VARCHAR);
+			ps.setInt(i++, 0);
+			ps.executeUpdate();
+			ps.close();
+			
+			ps = conn.prepareStatement("insert into " + SUFFIXES_TABLE + "(suffix) values (?)");
+			ps.setString(1, config.getSuffix());
+			ps.executeUpdate();
+			ps.close();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void sqlUpdate(String sql) {
