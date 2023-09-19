@@ -54,28 +54,16 @@ public class DBSourceServiceDataHelper {
 		return metalist;
 	}
 
-	public static void main(String[] args) throws SQLException {
-		System.out.println("Running...");
-		DBSourceParameters params;
-		DBSourceConfiguration config;
-		params = new DBSourceParameters();
-		params.setDbDatabase("sql");
-		params.setDbUsername("dbuser");
-		params.setDbPassword("userpass");
-		params.setDbServer("dev.local");
-		params.setDbPort(3306);
-
-		config = new DBSourceConfiguration();
-		config.setInstanceId("instance1");
-		config.setId("source1");
-		config.setSourceJdbcURL("jdbc:mariadb://dev.local:3306/source");
-		config.setSourceUsername("dbuser");
-		config.setSourcePassword("userpass");
-		config.setQuery("select uid, email, name, surname, phone from users");
-//		DBSourceServiceDataHelper test = new DBSourceServiceDataHelper(config);
-//		ResultSetMetaData meta = test.getMetadataFor();
-//		for (int i = 1; i <= meta.getColumnCount() ; i++) {
-//			System.out.printf("%s, %s, %s\n", meta.getColumnName(i), meta.getColumnTypeName(i), meta.getColumnType(i));
-//		}
+	public ResultSet getDataFor(String query) throws SQLException {
+		Connection conn = bds.getConnection();
+		PreparedStatement ps = conn.prepareStatement(query);
+		return ps.executeQuery();
 	}
+	
+	public void closeResources(ResultSet rs) throws SQLException {
+		Connection conn = rs.getStatement().getConnection();
+		rs.close();
+		conn.close();
+	}
+
 }

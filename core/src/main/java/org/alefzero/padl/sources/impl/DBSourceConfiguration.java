@@ -1,6 +1,7 @@
 package org.alefzero.padl.sources.impl;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -303,6 +304,12 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 
 	public void setDbtoldap(Map<String, String> dbtoldap) {
 		this.dbtoldap = dbtoldap;
+	}
+
+	public List<String> getExtraClasses() {
+		List<String> list = new LinkedList<String>(getObjectClasses());
+		list.remove(0);
+		return list;
 	}
 
 }

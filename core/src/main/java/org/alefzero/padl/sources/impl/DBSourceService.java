@@ -1,5 +1,6 @@
 package org.alefzero.padl.sources.impl;
 
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,7 +24,15 @@ public class DBSourceService extends PadlSourceService {
 
 	@Override
 	public void sync() {
-		// TODO implement
+
+		try {
+			proxyHelper.cleanTempTables();
+			proxyHelper.loadData(dataHelper);
+			proxyHelper.mergeData();
+			proxyHelper.generateEntries();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -45,6 +54,7 @@ public class DBSourceService extends PadlSourceService {
 		proxyHelper.loadOpenldapMappings();
 		proxyHelper.loadAttributes();
 
+		
 	}
 
 	public static void main(String[] args) {
@@ -63,7 +73,6 @@ public class DBSourceService extends PadlSourceService {
 		config.setId("source1");
 		config.setType("sql");
 		config.setQuery("select * from users");
-		// config.setQuery("select uid, email, name, surname, phone from users");
 		config.setSourceJdbcURL("jdbc:mariadb://dev.local:3306/source");
 		config.setSourceUsername("dbuser");
 		config.setSourcePassword("userpass");
@@ -87,6 +96,7 @@ public class DBSourceService extends PadlSourceService {
 		test.setConfig(config);
 		test.setSourceParameters(params);
 		test.prepare();
+		test.sync();
 		System.out.println("Done");
 	}
 }

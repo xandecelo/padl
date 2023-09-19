@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.alefzero.padl.sources.impl.DBSourceConfiguration.JoinData;
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -25,6 +26,8 @@ public class DBSourceServiceProxyHelper {
 
 	private static final String SUFFIXES_TABLE = "suffixes";
 
+	private static final Object EXTRA_CLASSES_TABLE = "extra_classes";
+
 	private BasicDataSource adminBds = null;
 	private BasicDataSource bds = null;
 	private DBSourceParameters params;
@@ -33,6 +36,12 @@ public class DBSourceServiceProxyHelper {
 	private static Integer randomId = 0;
 
 	private Map<Integer, String> objectClasses = new HashMap<Integer, String>();
+
+	private List<String> temporaryTables = new LinkedList<String>();
+
+	private PreparedStatement psLoad;
+
+	private int position = 1;
 
 	public DBSourceServiceProxyHelper(DBSourceParameters params, DBSourceConfiguration config) {
 		this.params = params;
@@ -94,16 +103,18 @@ public class DBSourceServiceProxyHelper {
 
 	}
 
-	public boolean createTables(Map<String, ResultSetMetaData> td) {
+	public boolean createTables(Map<String, ResultSetMetaData> tableDefinition) {
 		boolean result = true;
 		try (Connection conn = bds.getConnection()) {
-			for (String tableName : td.keySet()) {
-				String createSQL = getSQLFor(tableName, td.get(tableName));
+			for (String tableName : tableDefinition.keySet()) {
+				String createSQL = getSQLFor(tableName, tableDefinition.get(tableName));
 				PreparedStatement ps = conn.prepareStatement(createSQL);
 				ps.executeUpdate();
 				ps.close();
 
-				createSQL = getSQLFor(tableName + "_temp", td.get(tableName));
+				String tempTable = getTempTableName(tableName);
+				createSQL = getSQLFor(tempTable, tableDefinition.get(tableName));
+				temporaryTables.add(tempTable);
 				ps = conn.prepareStatement(createSQL);
 				ps.executeUpdate();
 				ps.close();
@@ -222,11 +233,13 @@ public class DBSourceServiceProxyHelper {
 	}
 
 	public void createDNSuffixTable() {
-		this.sqlUpdate(
+		this.sqlUpdate(String.format("""
+				create or replace table %s (suffix_id serial, suffix varchar(100))
+				""", SUFFIXES_TABLE));
 
-				String.format("""
-						create or replace table %s (suffix_id serial, suffix varchar(100))
-						""", SUFFIXES_TABLE));
+		this.sqlUpdate(String.format("""
+				create or replace table %s (classname varchar(50))
+				""", EXTRA_CLASSES_TABLE));
 
 	}
 
@@ -264,6 +277,12 @@ public class DBSourceServiceProxyHelper {
 			ps.setString(1, config.getSuffixName());
 			ps.executeUpdate();
 			ps.close();
+
+			ps = conn.prepareStatement("insert into " + EXTRA_CLASSES_TABLE + " (classname) values (?)");
+			for (String extraClass : config.getExtraClasses()) {
+				ps.setString(1, extraClass);
+				ps.executeUpdate();
+			}
 
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -331,6 +350,151 @@ public class DBSourceServiceProxyHelper {
 			e.printStackTrace();
 		}
 
+	}
+
+	public void cleanTempTables() {
+		try (Connection conn = bds.getConnection()) {
+			for (String table : temporaryTables) {
+				sqlUpdate(String.format("""
+						delete from %s
+						""", table));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static class DataHelper {
+		private String tableName;
+		private String query;
+		private List<String> columns;
+
+		public DataHelper(String tableName, String query, List<String> columns) {
+			super();
+			this.tableName = tableName;
+			this.query = query;
+			this.columns = columns;
+		}
+
+		public String getTableName() {
+			return tableName;
+		}
+
+		public void setTableName(String tableName) {
+			this.tableName = tableName;
+		}
+
+		public String getQuery() {
+			return query;
+		}
+
+		public void setQuery(String query) {
+			this.query = query;
+		}
+
+		public List<String> getColumns() {
+			return columns;
+		}
+
+		public void setColumns(List<String> columns) {
+			this.columns = columns;
+		}
+
+	}
+
+	public void loadData(DBSourceServiceDataHelper helper) throws SQLException {
+
+		List<DataHelper> items = new LinkedList<DataHelper>();
+
+		DataHelper dataHelper = new DataHelper(config.getMetaTableName(), config.getQuery(),
+				new LinkedList<String>(config.getDbtoldap().keySet()));
+
+		items.add(dataHelper);
+
+		config.getJoinData().forEach(item -> items.add(new DataHelper(item.getMetaTableName(), item.getQuery(),
+				new LinkedList<String>(item.getDbtoldap().keySet()))));
+
+		for (DataHelper item : items) {
+
+			String template = """
+					insert into %s ( %s )  values ( %s )
+					""";
+
+			String colValues = "?,".repeat(item.getColumns().size());
+
+			colValues = colValues.substring(0, colValues.length() - 1);
+
+			String sqlInsert = String.format(template, getTempTableName(item.getTableName()),
+					String.join(",", item.getColumns()), colValues);
+
+			position = 1;
+
+			try (Connection conn = bds.getConnection()) {
+				psLoad = conn.prepareStatement(sqlInsert);
+
+				ResultSet sourceRs = helper.getDataFor(item.getQuery());
+
+				int count = 0;
+				while (sourceRs.next()) {
+					for (int i = 0; i < item.getColumns().size(); i++) {
+						String col = item.getColumns().get(i);
+						psLoad.setObject(i + 1, sourceRs.getObject(col));
+					}
+					psLoad.addBatch();
+					count++;
+					if (count > 10_000) {
+						psLoad.executeBatch();
+						count = 0;
+					}
+				}
+
+				if (count != 0) {
+					psLoad.executeBatch();
+				}
+
+				psLoad.close();
+				helper.closeResources(sourceRs);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+		}
+
+	}
+
+	private String getTempTableName(String metaTableName) {
+		return metaTableName + "_temp";
+	}
+
+	public void setData(String metaTableName, Object object, int type) throws SQLException {
+		psLoad.setObject(position++, object, type);
+	}
+
+	public void commit() throws SQLException {
+		psLoad.executeUpdate();
+		position = 1;
+
+	}
+
+	public void endLoad() throws SQLException {
+		Connection conn = bds.getConnection();
+		psLoad.close();
+		psLoad.getConnection().close();
+	}
+
+	public static void main(String[] args) {
+		String s = "?,".repeat(3);
+		System.out.println(s.substring(0, s.length() - 1));
+	}
+
+	public void mergeData() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void generateEntries() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
