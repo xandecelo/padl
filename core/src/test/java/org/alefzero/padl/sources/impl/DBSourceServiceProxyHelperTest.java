@@ -19,7 +19,6 @@ public class DBSourceServiceProxyHelperTest {
 	@BeforeAll
 	void prepare() {
 			params = new DBSourceParameters();
-			params.setDbDatabase("sql");
 			params.setDbUsername("dbuser");
 			params.setDbPassword("userpass");
 			params.setDbServer("dev.local");

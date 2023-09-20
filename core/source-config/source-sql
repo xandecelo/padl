@@ -1,5 +1,4 @@
 #!/bin/bash
-
 id=$1
 
 echo "Running backsql mariadb odbc configuration for $id".

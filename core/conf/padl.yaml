@@ -11,7 +11,6 @@ sourceParameters:
   dbPassword: userpass
   dbServer: dev.local
   dbPort: 3306
-  dbDatabase: backsql
 
 sources:
 #- id: ldap1

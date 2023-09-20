@@ -1,5 +1,9 @@
 package org.alefzero.padl.sources.impl;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,8 +31,6 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 
 	private Map<String, String> ldaptodb = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 	private Map<String, String> dbtoldap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
-
-	private static Integer randomId = new Random().nextInt(99_999);
 
 	public String getSourceJdbcURL() {
 		return sourceJdbcURL;
@@ -255,7 +257,7 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		sb.append("\nolcDatabase: sql");
 		sb.append("\nolcSuffix: ").append(this.getSuffix());
 		sb.append("\nolcRootDN: ").append(this.getRootDN());
-		sb.append("\nolcDbName: ").append(params.getDbDatabase());
+		sb.append("\nolcDbName: ").append(this.getDatabaseFullName());
 		sb.append("\nolcDbUser: ").append(params.getDbUsername());
 		sb.append("\nolcDbPass: ").append(params.getDbPassword());
 		sb.append("\nolcSqlSubtreeCond: ").append(this.getSubtreeCond());
@@ -274,19 +276,34 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		sb.append("DB_SERVER=").append(params.getDbServer());
 		sb.append(" DB_USERNAME=").append(params.getDbUsername());
 		sb.append(" DB_PASSWORD=").append(params.getDbPassword());
-		sb.append(" DB_DATABASE=").append(this.getDbDatabaseId());
+		sb.append(" DB_DATABASE=").append(this.getDatabaseFullName());
 		sb.append(" DB_PORT=").append(params.getDbPort());
 		return sb.toString();
 	}
 
-	protected String getDbDatabaseBase() {
-		return String.format("%s_%s", ((DBSourceParameters) this.getFactory().getSourceParameters()).getDbDatabase(),
-				this.getId());
+	private Integer getInstanceNumberId() {
+		Integer result = 0;
+		try {
+			Path file = Paths.get("/opt/app/db_service_id");
+			if (!Files.exists(file)) {
+				String randomId = String.format("%03d", (new Random()).nextInt(999));
+				Files.write(file, randomId.getBytes());
+			}
+			byte[] data = Files.readAllBytes(file);
+			result = Integer.parseInt(new String(data).trim());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return result;
 	}
 
-	protected String getDbDatabaseId() {
-		return String.format("%s_%s_%5d",
-				((DBSourceParameters) this.getFactory().getSourceParameters()).getDbDatabase(), this.getId(), randomId);
+	protected String getDatabaseBaseName() {
+		return String.format("%s_%s", this.getInstanceId(), this.getId());
+	}
+
+	protected String getDatabaseFullName() {
+		return String.format("%s_%03d", this.getDatabaseBaseName(), getInstanceNumberId());
 	}
 
 	public String getSuffixType() {

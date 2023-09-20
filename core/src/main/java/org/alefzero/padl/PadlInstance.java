@@ -53,7 +53,7 @@ public class PadlInstance {
 	}
 
 	public void sync() {
-		System.out.println("Syncing process in action.");
+		logger.debug("Syncing process in action.");
 		for (var sourceConfig : config.getSourcesInConfigurationOrder()) {
 			PadlSourceService source = manager.getSourceById(sourceConfig.getId());
 			source.sync();
@@ -61,7 +61,7 @@ public class PadlInstance {
 	}
 
 	public void prepareSync() {
-		System.out.println("Preparing sync...");
+		logger.debug("Preparing sync...");
 
 		for (var sourceConfig : config.getSourcesInConfigurationOrder()) {
 			PadlSourceService source = manager.getSourceById(sourceConfig.getId());

@@ -54,15 +54,13 @@ public class DBSourceService extends PadlSourceService {
 		proxyHelper.loadOpenldapMappings();
 		proxyHelper.loadAttributes();
 
-		
 	}
 
-	public static void main(String[] args) {
+	public static void main1(String[] args) {
 		DBSourceParameters params;
 		DBSourceConfiguration config;
 
 		params = new DBSourceParameters();
-		params.setDbDatabase("sql");
 		params.setDbUsername("dbuser");
 		params.setDbPassword("userpass");
 		params.setDbServer("dev.local");

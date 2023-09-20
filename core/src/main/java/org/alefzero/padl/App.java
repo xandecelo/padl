@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class App {
+	
 	protected static final Logger logger = LogManager.getLogger();
 
 	private static final String DEFAULT_ACTION = "help";
@@ -26,7 +27,7 @@ public class App {
 
 	public static void main(String[] args) {
 		logger.info("Padl is starting");
-		logger.debug("Padl is starting with parameters %s", Arrays.toString(args));
+		logger.debug("Padl is starting with parameters {}", Arrays.toString(args));
 		String configurationFilename = getConfigurationFilename(args);
 		String action = args.length > 1 ? args[1] : DEFAULT_ACTION;
 		String sourceType = args.length > 2 ? args[2] : "";
@@ -34,7 +35,8 @@ public class App {
 	}
 
 	private void startAction(String action, String configurationFilename, String sourceType) {
-		logger.trace(".startAction [action: {}, configurationFilename: {}]", action, configurationFilename);
+		logger.trace(".startAction [action: {}, configurationFilename: {}, sourceType: {}]", action,
+				configurationFilename, sourceType);
 		try {
 			Path configurationFile = Paths.get(configurationFilename);
 			PadlInstance instance = new PadlInstance();
@@ -60,6 +62,9 @@ public class App {
 				break;
 			case "sync":
 				runSyncProcess(instance);
+				break;
+			case "prepare":
+				runSyncOnce(instance);
 				break;
 			case "help":
 			default:
@@ -95,10 +100,11 @@ public class App {
 		System.out.println(help);
 	}
 
-	private void runSyncProcess(PadlInstance instance) {
-
+	private void runSyncOnce(PadlInstance instance) {
 		instance.prepareSync();
+	}
 
+	private void runSyncProcess(PadlInstance instance) {
 		Thread shutdownListener = new Thread() {
 			public void run() {
 				logger.info("Requesting padl processes to stop (10s)...");

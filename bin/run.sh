@@ -1,5 +1,11 @@
 #!/bin/bash
 
+export app="${APP_DIR}/padl/bin/padl"
+export conf="${APP_DIR}/padl/conf/padl.yaml"
+echo 
+echo 
+echo 
+
 trap end_padl_app INT TERM ERR
 
 end_padl_app() {
@@ -8,10 +14,6 @@ end_padl_app() {
     exit -1
 }
 
-export app="${APP_DIR}/padl/bin/padl"
-export conf="${APP_DIR}/padl/conf/padl.yaml"
-service slapd start
-
 echo() {
     command printf "%(%Y-%m-%d %H:%M:%S %Z)T - $@\n"
 }
@@ -19,10 +21,13 @@ echo() {
 check_yaml() {
     echo "Checking YAML"
     $app "$conf" check-yaml
+    echo "YAML check done."
 }
 
 get_os_variables() {
+    echo "Getting OS Variables"
     eval $($app "$conf" get-os-variables)
+    echo "OS configuration is done."
 }
 
 run_source_os_hooks() {
@@ -52,15 +57,25 @@ ldap_setup() {
     echo "done."
 }
 
+ldap_prepare_resources() {
+    echo "Preparing sync processes and loading first batch"
+    $app "$conf" prepare
+}
+
 ldap_start_sync() {
     echo "Running sync processes."
     $app "$conf" sync
 }
 
 check_yaml
+#tail -n 10 -F logs/padl.log &
 get_os_variables
 run_source_os_hooks
-test_connectivity``
+
+service slapd start
+
+test_connectivity
+ldap_prepare_resources
 ldap_setup
 ldap_start_sync
 echo "PADL LDAP is running. Press [q] and Enter to to quit."

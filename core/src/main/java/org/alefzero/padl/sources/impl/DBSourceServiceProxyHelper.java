@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.alefzero.padl.exceptions.PadlUnrecoverableError;
@@ -35,11 +34,10 @@ public class DBSourceServiceProxyHelper {
 	private DBSourceParameters params;
 	private DBSourceConfiguration config;
 
-	private static Integer randomId = new Random().nextInt(99_999);
-
 	private Map<Integer, String> objectClasses = new HashMap<Integer, String>();
 
 	private List<String> temporaryTables = new LinkedList<String>();
+
 
 	public DBSourceServiceProxyHelper(DBSourceParameters params, DBSourceConfiguration config) {
 		this.params = params;
@@ -59,7 +57,7 @@ public class DBSourceServiceProxyHelper {
 		if (bds == null) {
 			bds = new BasicDataSource();
 			bds.setUrl(String.format("jdbc:mariadb://%s:%d/%s", params.getDbServer(), params.getDbPort(),
-					this.getDatabaseName()));
+					config.getDatabaseFullName()));
 			bds.setUsername(params.getDbUsername());
 			bds.setPassword(params.getDbPassword());
 			bds.setMaxTotal(10);
@@ -68,20 +66,13 @@ public class DBSourceServiceProxyHelper {
 		}
 	}
 
-	private String getDatabaseName() {
-		return String.format("%s_%05d", getDatabaseBaseName(), randomId);
-	}
-
-	private String getDatabaseBaseName() {
-		return String.format("%s_%s", config.getInstanceId(), config.getId());
-	}
 
 	public void cleanDatabases() {
-		logger.debug("Running cleaning database process with base name [basename='{}", getDatabaseBaseName() + "%']");
+		logger.debug("Running cleaning database process with base name [basename='{}", config.getDatabaseBaseName() + "%']");
 		try (Connection conn = adminBds.getConnection()) {
 			PreparedStatement ps = conn.prepareStatement(
 					"select schema_name from information_schema.schemata where schema_name like ? order by 1");
-			ps.setString(1, getDatabaseBaseName() + "%");
+			ps.setString(1, config.getDatabaseBaseName() + "%");
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
 				logger.debug("Removing schema {}.", rs.getString(1));
@@ -91,7 +82,7 @@ public class DBSourceServiceProxyHelper {
 			}
 			rs.close();
 			ps.close();
-			PreparedStatement psCreate = conn.prepareStatement("create database " + this.getDatabaseName());
+			PreparedStatement psCreate = conn.prepareStatement("create database " + config.getDatabaseFullName());
 			psCreate.executeUpdate();
 			psCreate.close();
 
@@ -143,8 +134,7 @@ public class DBSourceServiceProxyHelper {
 					getMariaDBTypeName(resultSetMetaData.getColumnType(i)), precision));
 		}
 		String result = String.format(sql, tableName, String.join(",", cols));
-		logger.debug("Returning create SQL: %s", result);
-		System.out.println(String.format("Returning create SQL: %s", result));
+		logger.debug("Returning create SQL: {}", result);
 		return result;
 	}
 
@@ -431,7 +421,7 @@ public class DBSourceServiceProxyHelper {
 			String sqlInsert = String.format(template, getTempTableName(item.getTableName()),
 					String.join(",", item.getColumns()), colValues);
 
-			System.out.println("Loading data with: " + sqlInsert);
+			logger.debug("Loading data with: " + sqlInsert);
 
 			try (Connection conn = bds.getConnection()) {
 				PreparedStatement psLoad = conn.prepareStatement(sqlInsert);
@@ -522,7 +512,7 @@ public class DBSourceServiceProxyHelper {
 						)
 						""", proxyTableName, proxyTableName, tempTableName, allJoinCols, idColumn);
 
-				System.out.println("Runing sync delete phase with: \n" + sqlDeleteDiff);
+				logger.debug("Runing sync delete phase with: \n" + sqlDeleteDiff);
 				PreparedStatement psDelete = conn.prepareStatement(sqlDeleteDiff);
 				psDelete.executeUpdate();
 				psDelete.close();
@@ -534,7 +524,7 @@ public class DBSourceServiceProxyHelper {
 						select %s from %s as proxytable
 							""", proxyTableName, allCols, allCols, tempTableName, allCols, proxyTableName);
 
-				System.out.println("Runing sync insert phase with: \n" + sqlInsertDiff);
+				logger.debug("Runing sync insert phase with: \n" + sqlInsertDiff);
 
 				PreparedStatement psInsert = conn.prepareStatement(sqlInsertDiff);
 
@@ -560,7 +550,7 @@ public class DBSourceServiceProxyHelper {
 					(select keyval from ldap_entries where oc_map_id = ?)
 					""", suffixDN, SUFFIX_OBJECT_CLASS_ID);
 
-			System.out.println("Checking suffix with:\n" + sqlUpdateSuffix);
+			logger.debug("Checking suffix with:\n" + sqlUpdateSuffix);
 
 			PreparedStatement psUpdateSuffix = conn.prepareStatement(sqlUpdateSuffix);
 			psUpdateSuffix.setInt(1, SUFFIX_OBJECT_CLASS_ID);
@@ -574,7 +564,7 @@ public class DBSourceServiceProxyHelper {
 						and keyval not in (select padl_source_id from %s)
 					""", config.getMetaTableName());
 
-			System.out.println("Removing entries with:\n" + sqlDeleteEntries);
+			logger.debug("Removing entries with:\n" + sqlDeleteEntries);
 
 			PreparedStatement psDeleteEntries = conn.prepareStatement(sqlDeleteEntries);
 			psDeleteEntries.setInt(1, PROXY_OBJECT_CLASS_ID);
@@ -606,7 +596,7 @@ public class DBSourceServiceProxyHelper {
 					(select keyval from ldap_entries where oc_map_id = ?)
 					""", dnClause, PROXY_OBJECT_CLASS_ID, suffixId, config.getMetaTableName());
 
-			System.out.println("Inserting new entries with:\n" + sqlInsertEntries);
+			logger.debug("Inserting new entries with:\n" + sqlInsertEntries);
 
 			PreparedStatement psInsertEntries = conn.prepareStatement(sqlInsertEntries);
 			psInsertEntries.setInt(1, PROXY_OBJECT_CLASS_ID);

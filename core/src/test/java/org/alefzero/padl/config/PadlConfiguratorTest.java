@@ -19,7 +19,8 @@ import org.junit.jupiter.api.function.Executable;
 class PadlConfiguratorTest {
 	protected static final Logger logger = LogManager.getLogger();
 	
-	private PadlServiceManager clazz = null;
+	@SuppressWarnings("unused")
+	private PadlServiceManager clazz;
 	
 	@BeforeAll
 	void prepare()  {
