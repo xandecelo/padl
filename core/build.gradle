@@ -19,6 +19,9 @@ dependencies {
     // Sql control
     implementation 'org.mariadb.jdbc:mariadb-java-client:3.1.0'
     implementation 'org.apache.commons:commons-dbcp2:2.9.0'
+   
+    // Jdbc libraries
+    implementation 'com.oracle.database.jdbc:ojdbc10:19.20.0.0'
     
     // Jackson YAML processor
     implementation 'com.fasterxml.jackson.core:jackson-core:2.14.2'
