@@ -33,6 +33,7 @@ public class DBSourceServiceProxyHelper {
 	private BasicDataSource bds = null;
 	private DBSourceParameters params;
 	private DBSourceConfiguration config;
+
 	private static Integer randomId = new Random().nextInt(99_999);
 
 	private Map<Integer, String> objectClasses = new HashMap<Integer, String>();
@@ -471,15 +472,15 @@ public class DBSourceServiceProxyHelper {
 		TableDataHelper tableData = new TableDataHelper(config.getMetaTableName(), config.getIdColumn(),
 				config.getQuery(), new LinkedList<String>(config.getDbtoldap().keySet()));
 
-		if (! tableData.getColumns().contains(config.getIdColumn())) {
+		if (!tableData.getColumns().contains(config.getIdColumn())) {
 			tableData.getColumns().add(config.getIdColumn());
 		}
-		
+
 		tableDatum.add(tableData);
 
 		config.getJoinData().forEach(item -> {
 			List<String> list = new LinkedList<String>(item.getDbtoldap().keySet());
-			if (! list.contains(config.getIdColumn())) {
+			if (!list.contains(config.getIdColumn())) {
 				list.add(config.getIdColumn());
 			}
 			tableDatum.add(new TableDataHelper(item.getMetaTableName(), item.getIdColumn(), item.getQuery(), list));
@@ -514,7 +515,7 @@ public class DBSourceServiceProxyHelper {
 						delete from %s where padl_source_id in (
 						select proxytable.padl_source_id
 						from %s as proxytable
-						inner join %s as temptable
+						left join %s as temptable
 						on
 							%s
 						where temptable.%s is null
@@ -532,7 +533,7 @@ public class DBSourceServiceProxyHelper {
 						except
 						select %s from %s as proxytable
 							""", proxyTableName, allCols, allCols, tempTableName, allCols, proxyTableName);
-				
+
 				System.out.println("Runing sync insert phase with: \n" + sqlInsertDiff);
 
 				PreparedStatement psInsert = conn.prepareStatement(sqlInsertDiff);

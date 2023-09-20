@@ -22,6 +22,8 @@ public class App {
 	private static final String DEFAULT_CONFIGURATION_FILENAME = System.getenv("$APP_DIR") + "./conf/padl.yaml";
 	private ScheduledFuture<?> executor = null;
 
+	private volatile boolean runProcessFlag = true;
+
 	public static void main(String[] args) {
 		logger.info("Padl is starting");
 		logger.debug("Padl is starting with parameters %s", Arrays.toString(args));
@@ -101,9 +103,10 @@ public class App {
 			public void run() {
 				logger.info("Requesting padl processes to stop (10s)...");
 				try {
+					runProcessFlag = false;
 					if (executor != null) {
 						executor.cancel(false);
-						Thread.sleep(10000);
+						Thread.sleep(10_000);
 					}
 					logger.info("Padl is shutdown.");
 				} catch (InterruptedException e) {
@@ -117,6 +120,15 @@ public class App {
 		try {
 			executor = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> instance.sync(), 0, 120,
 					TimeUnit.SECONDS);
+
+			while (runProcessFlag) {
+				try {
+					Thread.sleep(3_000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+			}
 		} catch (PadlUnrecoverableError e) {
 			e.printStackTrace();
 			logger.error(e);
