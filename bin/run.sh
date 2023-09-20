@@ -67,6 +67,22 @@ ldap_start_sync() {
     $app "$conf" sync
 }
 
+
+
+ldap_apply_dyngroup() {
+    cat << EOF | ldapmodify -Y EXTERNAL -H ldapi:/// -a
+dn: cn=memberOfAux,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: memberOfAux
+olcAttributeTypes: ( 1.2.840.113556.1.4.222 NAME 'memberOf' DESC 'Group that the
+ entry belongs to' EQUALITY distinguishedNameMatch SYNTAX 1.3.6.1.4.1.1466.115
+ .121.1.12 )
+olcObjectClasses: ( 1.2.840.113556.1.5.6 NAME 'memberOfAux' SUP top AUXILIARY MAY
+  ( memberOf ) )
+
+EOF
+}
+
 check_yaml
 #tail -n 10 -F logs/padl.log &
 get_os_variables
@@ -75,6 +91,7 @@ run_source_os_hooks
 service slapd start
 
 test_connectivity
+ldap_apply_dyngroup
 ldap_prepare_resources
 ldap_setup
 ldap_start_sync
