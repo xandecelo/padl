@@ -62,7 +62,8 @@ sources:
             on a.groupid = b.groupid
             inner join users c
             on b.username = c.username
-    joinColumns: groupname  
+    joinColumns: groupname
+    idColumn: username 
     attributes:
     - member=username
   objectClasses: 

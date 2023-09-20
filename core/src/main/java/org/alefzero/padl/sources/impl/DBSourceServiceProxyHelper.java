@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.alefzero.padl.sources.impl.DBSourceConfiguration.JoinData;
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -364,14 +364,16 @@ public class DBSourceServiceProxyHelper {
 		}
 	}
 
-	public static class DataHelper {
+	public static class TableDataHelper {
 		private String tableName;
 		private String query;
 		private List<String> columns;
+		private String idColumn;
 
-		public DataHelper(String tableName, String query, List<String> columns) {
+		public TableDataHelper(String tableName, String uidCol, String query, List<String> columns) {
 			super();
 			this.tableName = tableName;
+			this.idColumn = uidCol;
 			this.query = query;
 			this.columns = columns;
 		}
@@ -400,21 +402,21 @@ public class DBSourceServiceProxyHelper {
 			this.columns = columns;
 		}
 
+		public String getIdColumn() {
+			return idColumn;
+		}
+
+		public void setIdColumn(String uidCol) {
+			this.idColumn = uidCol;
+		}
+
 	}
 
 	public void loadData(DBSourceServiceDataHelper helper) throws SQLException {
 
-		List<DataHelper> items = new LinkedList<DataHelper>();
+		List<TableDataHelper> items = getTableDataHelper();
 
-		DataHelper dataHelper = new DataHelper(config.getMetaTableName(), config.getQuery(),
-				new LinkedList<String>(config.getDbtoldap().keySet()));
-
-		items.add(dataHelper);
-
-		config.getJoinData().forEach(item -> items.add(new DataHelper(item.getMetaTableName(), item.getQuery(),
-				new LinkedList<String>(item.getDbtoldap().keySet()))));
-
-		for (DataHelper item : items) {
+		for (TableDataHelper item : items) {
 
 			String template = """
 					insert into %s ( %s )  values ( %s )
@@ -428,6 +430,8 @@ public class DBSourceServiceProxyHelper {
 					String.join(",", item.getColumns()), colValues);
 
 			position = 1;
+
+			System.out.println(sqlInsert);
 
 			try (Connection conn = bds.getConnection()) {
 				psLoad = conn.prepareStatement(sqlInsert);
@@ -462,39 +466,72 @@ public class DBSourceServiceProxyHelper {
 
 	}
 
+	private List<TableDataHelper> getTableDataHelper() {
+
+		LinkedList<TableDataHelper> tableDatum = new LinkedList<TableDataHelper>();
+		TableDataHelper tableData = new TableDataHelper(config.getMetaTableName(), config.getIdColumn(),
+				config.getQuery(), new LinkedList<String>(config.getDbtoldap().keySet()));
+
+		tableDatum.add(tableData);
+		config.getJoinData().forEach(item -> tableDatum.add(new TableDataHelper(item.getMetaTableName(),
+				item.getIdColumn(), item.getQuery(), new LinkedList<String>(item.getDbtoldap().keySet()))));
+
+		return tableDatum;
+	}
+
 	private String getTempTableName(String metaTableName) {
 		return metaTableName + "_temp";
 	}
 
-	public void setData(String metaTableName, Object object, int type) throws SQLException {
-		psLoad.setObject(position++, object, type);
-	}
-
-	public void commit() throws SQLException {
-		psLoad.executeUpdate();
-		position = 1;
-
-	}
-
-	public void endLoad() throws SQLException {
-		Connection conn = bds.getConnection();
-		psLoad.close();
-		psLoad.getConnection().close();
-	}
-
-	public static void main(String[] args) {
-		String s = "?,".repeat(3);
-		System.out.println(s.substring(0, s.length() - 1));
-	}
-
 	public void mergeData() {
-		// TODO Auto-generated method stub
-		
-	}
 
-	public void generateEntries() {
-		// TODO Auto-generated method stub
-		
+		List<TableDataHelper> tableDatum = getTableDataHelper();
+
+		for (TableDataHelper tableData : tableDatum) {
+
+			try (Connection conn = bds.getConnection()) {
+				String proxyTableName = tableData.getTableName();
+				String idColumn = tableData.getIdColumn();
+				String tempTableName = getTempTableName(proxyTableName);
+				List<String> fmtJoinAllCols = tableData.getColumns().stream()
+						.map(col -> String.format("proxytable.%s = temptable.%s", col, col))
+						.collect(Collectors.toList());
+
+				String allJoinCols = String.join(" and ", fmtJoinAllCols);
+				String allCols = String.join(",", tableData.getColumns());
+
+				String sqlDeleteDiff = String.format("""
+						delete from %s where padl_source_id in (
+						select proxytable.padl_source_id
+						from %s as proxytable
+						inner join %s as temptable
+						on
+							%s
+						where temptable.%s is null
+						)
+						""", proxyTableName, proxyTableName, tempTableName, allJoinCols, idColumn);
+
+				PreparedStatement psDelete = conn.prepareStatement(sqlDeleteDiff);
+				psDelete.executeUpdate();
+				psDelete.close();
+
+				String sqlInsertDiff = String.format("""
+						insert into %s ( %s )
+						select %s from %s as temptable
+						except
+						select %s from %s as proxytable
+							""", proxyTableName, allCols, allCols, tempTableName, allCols, proxyTableName);
+
+				PreparedStatement psInsert = conn.prepareStatement(sqlInsertDiff);
+
+				psInsert.executeUpdate();
+				psInsert.close();
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
 	}
 
 }

@@ -29,7 +29,6 @@ public class DBSourceService extends PadlSourceService {
 			proxyHelper.cleanTempTables();
 			proxyHelper.loadData(dataHelper);
 			proxyHelper.mergeData();
-			proxyHelper.generateEntries();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -79,15 +78,18 @@ public class DBSourceService extends PadlSourceService {
 		config.setObjectClasses(Arrays.asList(new String[] { "inetOrgPerson" }));
 		config.setSuffix("ou=users,dc=example,dc=org");
 		config.setBaseSuffix("dc=example,dc=org");
+		config.setIdColumn("uid");
 		config.setAttributes(
-				new String[] { "givenName=first_name", " sn=surname", "cn=username", " telephoneNumber=phone" });
+				new String[] { "givenName=name", " sn=surname", "cn=uid", "telephoneNumber=phone", "mail=email" });
 		List<DBSourceConfiguration.JoinData> list = new LinkedList<DBSourceConfiguration.JoinData>();
 
 		DBSourceConfiguration.JoinData join = new DBSourceConfiguration.JoinData();
 		join.setId("groups");
-		join.setQuery("select groupname from groups a inner join users b on a.username = b.uid");
+		join.setQuery("select groupname, username from groups a inner join users b on a.username = b.uid");
 		join.setAttributes(new String[] { "memberOf=groupname" });
 		join.setJoinColumns("uid=username");
+		join.setIdColumn("username");
+
 		list.add(join);
 
 		config.setJoinData(list);

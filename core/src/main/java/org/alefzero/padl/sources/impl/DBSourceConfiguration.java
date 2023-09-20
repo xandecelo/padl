@@ -144,6 +144,7 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		private String query;
 		private String joinColumns;
 		private String[] attributes;
+		private String idColumn;
 		private Map<String, String> ldaptodb = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 		private Map<String, String> dbtoldap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 
@@ -230,6 +231,14 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 			return "JoinData [outerId=" + outerId + ", id=" + id + ", query=" + query + ", joinColumns=" + joinColumns
 					+ ", attributes=" + Arrays.toString(attributes) + ", ldaptodb=" + ldaptodb + ", dbtoldap="
 					+ dbtoldap + "]";
+		}
+
+		public String getIdColumn() {
+			return idColumn;
+		}
+
+		public void setIdColumn(String idColumn) {
+			this.idColumn = idColumn;
 		}
 
 	}
