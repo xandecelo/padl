@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.alefzero.padl.sources.impl.DBSourceConfiguration.JoinData;
@@ -32,16 +33,11 @@ public class DBSourceServiceProxyHelper {
 	private BasicDataSource bds = null;
 	private DBSourceParameters params;
 	private DBSourceConfiguration config;
-//	private static Integer randomId = new Random().nextInt(99_999);
-	private static Integer randomId = 0;
+	private static Integer randomId = new Random().nextInt(99_999);
 
 	private Map<Integer, String> objectClasses = new HashMap<Integer, String>();
 
 	private List<String> temporaryTables = new LinkedList<String>();
-
-	private PreparedStatement psLoad;
-
-	private int position = 1;
 
 	public DBSourceServiceProxyHelper(DBSourceParameters params, DBSourceConfiguration config) {
 		this.params = params;
@@ -107,13 +103,13 @@ public class DBSourceServiceProxyHelper {
 		boolean result = true;
 		try (Connection conn = bds.getConnection()) {
 			for (String tableName : tableDefinition.keySet()) {
-				String createSQL = getSQLFor(tableName, tableDefinition.get(tableName));
+				String createSQL = getCreateSQLFor(tableName, tableDefinition.get(tableName));
 				PreparedStatement ps = conn.prepareStatement(createSQL);
 				ps.executeUpdate();
 				ps.close();
 
 				String tempTable = getTempTableName(tableName);
-				createSQL = getSQLFor(tempTable, tableDefinition.get(tableName));
+				createSQL = getCreateSQLFor(tempTable, tableDefinition.get(tableName));
 				temporaryTables.add(tempTable);
 				ps = conn.prepareStatement(createSQL);
 				ps.executeUpdate();
@@ -126,7 +122,7 @@ public class DBSourceServiceProxyHelper {
 		return result;
 	}
 
-	private String getSQLFor(String tableName, ResultSetMetaData resultSetMetaData) throws SQLException {
+	private String getCreateSQLFor(String tableName, ResultSetMetaData resultSetMetaData) throws SQLException {
 		String sql = """
 				create or replace table %s (padl_source_id serial, %s )
 				""";
@@ -135,7 +131,8 @@ public class DBSourceServiceProxyHelper {
 
 		for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
 			String precision;
-			if (resultSetMetaData.getScale(i) > 0) {
+			if (resultSetMetaData.getColumnType(i) == Types.DECIMAL
+					|| resultSetMetaData.getColumnType(i) == Types.NUMERIC) {
 				precision = String.format("(%d,%d)", resultSetMetaData.getPrecision(i), resultSetMetaData.getScale(i));
 			} else {
 				precision = String.format("(%d)", resultSetMetaData.getPrecision(i));
@@ -143,7 +140,10 @@ public class DBSourceServiceProxyHelper {
 			cols.add(String.format("%s %s %s", resultSetMetaData.getColumnName(i),
 					getMariaDBTypeName(resultSetMetaData.getColumnType(i)), precision));
 		}
-		return String.format(sql, tableName, String.join(",", cols));
+		String result = String.format(sql, tableName, String.join(",", cols));
+		logger.debug("Returning create SQL: %s", result);
+		System.out.println(String.format("Returning create SQL: %s", result));
+		return result;
 	}
 
 	private String getMariaDBTypeName(int columnType) {
@@ -429,12 +429,10 @@ public class DBSourceServiceProxyHelper {
 			String sqlInsert = String.format(template, getTempTableName(item.getTableName()),
 					String.join(",", item.getColumns()), colValues);
 
-			position = 1;
-
-			System.out.println(sqlInsert);
+			System.out.println("Loading data with: " + sqlInsert);
 
 			try (Connection conn = bds.getConnection()) {
-				psLoad = conn.prepareStatement(sqlInsert);
+				PreparedStatement psLoad = conn.prepareStatement(sqlInsert);
 
 				ResultSet sourceRs = helper.getDataFor(item.getQuery());
 
@@ -469,12 +467,24 @@ public class DBSourceServiceProxyHelper {
 	private List<TableDataHelper> getTableDataHelper() {
 
 		LinkedList<TableDataHelper> tableDatum = new LinkedList<TableDataHelper>();
+
 		TableDataHelper tableData = new TableDataHelper(config.getMetaTableName(), config.getIdColumn(),
 				config.getQuery(), new LinkedList<String>(config.getDbtoldap().keySet()));
 
+		if (! tableData.getColumns().contains(config.getIdColumn())) {
+			tableData.getColumns().add(config.getIdColumn());
+		}
+		
 		tableDatum.add(tableData);
-		config.getJoinData().forEach(item -> tableDatum.add(new TableDataHelper(item.getMetaTableName(),
-				item.getIdColumn(), item.getQuery(), new LinkedList<String>(item.getDbtoldap().keySet()))));
+
+		config.getJoinData().forEach(item -> {
+			List<String> list = new LinkedList<String>(item.getDbtoldap().keySet());
+			if (! list.contains(config.getIdColumn())) {
+				list.add(config.getIdColumn());
+			}
+			tableDatum.add(new TableDataHelper(item.getMetaTableName(), item.getIdColumn(), item.getQuery(), list));
+
+		});
 
 		return tableDatum;
 	}
@@ -511,6 +521,7 @@ public class DBSourceServiceProxyHelper {
 						)
 						""", proxyTableName, proxyTableName, tempTableName, allJoinCols, idColumn);
 
+				System.out.println("Runing sync delete phase with: \n" + sqlDeleteDiff);
 				PreparedStatement psDelete = conn.prepareStatement(sqlDeleteDiff);
 				psDelete.executeUpdate();
 				psDelete.close();
@@ -521,6 +532,8 @@ public class DBSourceServiceProxyHelper {
 						except
 						select %s from %s as proxytable
 							""", proxyTableName, allCols, allCols, tempTableName, allCols, proxyTableName);
+				
+				System.out.println("Runing sync insert phase with: \n" + sqlInsertDiff);
 
 				PreparedStatement psInsert = conn.prepareStatement(sqlInsertDiff);
 

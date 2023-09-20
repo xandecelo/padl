@@ -22,27 +22,30 @@ sources:
 - id: sql_users
   enabled: true
   suffix: ou=users,dc=example,dc=org
+  sourceJdbcURL: "jdbc:mariadb://dev.local:3306/source"
+  sourceUsername: "dbuser"
+  sourcePassword: "userpass"
   dnFormat: uid=%s
   type: sql
-  query: select username, concat(first_name, ' ', surname) as full_name, first_name, surname, phone from users
+  query: select username, concat(name, ' ', surname) as full_name, name, surname, phone, email from users
   idColumn: username
   attributes:
-  - givenName=first_name
+  - givenName=name
   - sn=surname
   - cn=username
   - telephoneNumber=phone
+  - mail=email
   joinData:
   - id: data1
     query: >- 
-        select c.username, a.groupname 
+        select a.groupname , a.username
         from groups a 
-            inner join group_users b
-            on a.groupid = b.groupid
-            inner join users c
-            on b.username = c.username
+        inner join users b
+        on a.username = b.username
     joinColumns: username=username
     attributes:
-    - memberOf=a.groupname
+    - memberOf=groupname
+    idColumn: username
   objectClasses: 
   - inetOrgPerson
 - id: sql_groups
@@ -50,18 +53,18 @@ sources:
   suffix: ou=groups,dc=example,dc=org
   dnFormat: cn=%s
   type: sql
-  query: select group_name from groups
-  idColumn: group_name
+  sourceJdbcURL: "jdbc:mariadb://dev.local:3306/source"
+  sourceUsername: "dbuser"
+  sourcePassword: "userpass"
+  query: select groupname from groups
+  idColumn: groupname
   attributes:
+  - cn=groupname
   joinData:
   - id: data2
     query: >- 
-        select c.username, a.groupname 
+        select distinct a.groupname, a.username
         from groups a 
-            inner join group_users b
-            on a.groupid = b.groupid
-            inner join users c
-            on b.username = c.username
     joinColumns: groupname
     idColumn: username 
     attributes:
