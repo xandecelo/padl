@@ -29,6 +29,7 @@ public class DBSourceService extends PadlSourceService {
 			proxyHelper.cleanTempTables();
 			proxyHelper.loadData(dataHelper);
 			proxyHelper.mergeData();
+			proxyHelper.updateEntries();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

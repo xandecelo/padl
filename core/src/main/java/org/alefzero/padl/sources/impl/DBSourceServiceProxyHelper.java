@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.alefzero.padl.exceptions.PadlUnrecoverableError;
 import org.alefzero.padl.sources.impl.DBSourceConfiguration.JoinData;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.logging.log4j.LogManager;
@@ -499,7 +500,6 @@ public class DBSourceServiceProxyHelper {
 		List<TableDataHelper> tableDatum = getTableDataHelper();
 
 		for (TableDataHelper tableData : tableDatum) {
-
 			try (Connection conn = bds.getConnection()) {
 				String proxyTableName = tableData.getTableName();
 				String idColumn = tableData.getIdColumn();
@@ -545,7 +545,77 @@ public class DBSourceServiceProxyHelper {
 				e.printStackTrace();
 			}
 		}
+	}
 
+	public void updateEntries() {
+		try (Connection conn = bds.getConnection()) {
+
+			String suffixDN = config.getSuffix();
+
+			String sqlUpdateSuffix = String.format("""
+					insert into ldap_entries (dn,oc_map_id,parent,keyval)
+					select '%s', %d, 0 as parent, suffix_id
+					from suffixes
+					where suffix_id not in
+					(select keyval from ldap_entries where oc_map_id = ?)
+					""", suffixDN, SUFFIX_OBJECT_CLASS_ID);
+
+			System.out.println("Checking suffix with:\n" + sqlUpdateSuffix);
+
+			PreparedStatement psUpdateSuffix = conn.prepareStatement(sqlUpdateSuffix);
+			psUpdateSuffix.setInt(1, SUFFIX_OBJECT_CLASS_ID);
+			psUpdateSuffix.executeUpdate();
+			psUpdateSuffix.close();
+
+			String sqlDeleteEntries = String.format("""
+					delete from ldap_entries
+					where
+						oc_map_id = ?
+						and keyval not in (select padl_source_id from %s)
+					""", config.getMetaTableName());
+
+			System.out.println("Removing entries with:\n" + sqlDeleteEntries);
+
+			PreparedStatement psDeleteEntries = conn.prepareStatement(sqlDeleteEntries);
+			psDeleteEntries.setInt(1, PROXY_OBJECT_CLASS_ID);
+			psDeleteEntries.executeUpdate();
+			psDeleteEntries.close();
+
+			PreparedStatement psGetSuffixId = conn
+					.prepareStatement("select suffix_id from %s where suffix = ?".formatted(SUFFIXES_TABLE));
+			psGetSuffixId.setString(1, config.getSuffixName());
+			ResultSet rsSuffix = psGetSuffixId.executeQuery();
+
+			int suffixId = 0;
+
+			if (rsSuffix.next()) {
+				suffixId = rsSuffix.getInt(1);
+
+			} else {
+				throw new PadlUnrecoverableError("Suffix id cannot be null");
+			}
+
+			String dnClause = "concat('%s ,',' , '%s')"
+					.formatted(config.getDnFormat().formatted("'," + config.getIdColumn()), config.getSuffix());
+
+			String sqlInsertEntries = String.format("""
+					insert into ldap_entries (dn,oc_map_id,parent,keyval)
+					select %s, %d as oc_map_id, %d as parent, padl_source_id
+					from %s
+					where padl_source_id not in
+					(select keyval from ldap_entries where oc_map_id = ?)
+					""", dnClause, PROXY_OBJECT_CLASS_ID, suffixId, config.getMetaTableName());
+
+			System.out.println("Inserting new entries with:\n" + sqlInsertEntries);
+
+			PreparedStatement psInsertEntries = conn.prepareStatement(sqlInsertEntries);
+			psInsertEntries.setInt(1, PROXY_OBJECT_CLASS_ID);
+			psInsertEntries.executeUpdate();
+			psInsertEntries.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

@@ -14,11 +14,11 @@ sourceParameters:
   dbDatabase: backsql
 
 sources:
-- id: ldap1
-  type: proxy
-  suffix: dc=ldap,dc=example,dc=org
-  targetURI: "ldap://dev.local:10389"
-  aclBind: binddn="cn=admin,dc=test,dc=com" credentials="admin"
+#- id: ldap1
+#  type: proxy
+#  suffix: dc=ldap,dc=example,dc=org
+#  targetURI: "ldap://dev.local:10389"
+#  aclBind: binddn="cn=admin,dc=test,dc=com" credentials="admin"
 - id: sql_users
   enabled: true
   suffix: ou=users,dc=example,dc=org
