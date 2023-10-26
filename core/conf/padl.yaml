@@ -16,7 +16,7 @@ sources:
 - id: ldap1
   type: proxy
   suffix: dc=example,dc=com
-  targetURI: "ldap://dev.local:389"
+  targetURI: "ldap://dev.local:10389"
   aclBind: binddn="cn=admin,dc=example,dc=com" credentials="admin"
 
 # - id: sql_users
