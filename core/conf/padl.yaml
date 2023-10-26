@@ -19,40 +19,37 @@ sources:
   targetURI: "ldap://dev.local:10389"
   aclBind: binddn="cn=admin,dc=example,dc=com" credentials="admin"
 
-# - id: sql_users
-#   enabled: true
-#   suffix: ou=dbusers,dc=example,dc=com
-#   sourceJdbcURL: "jdbc:mariadb://dev.local:3306/sourcedb"
-#   sourceUsername: "sourceuser"
-#   sourcePassword: "sourcepassword"
-#   dnFormat: uid=%s
-#   type: sql
-#   query: select uid, concat(name, ' ', surname) as full_name, name, surname, phone, email from users
-#   idColumn: uid
-#   attributes:
-#   - givenName=name
-#   - sn=surname
-#   - cn=username
-#   - telephoneNumber=phone
-#   - mail=email
-#   objectClasses:
-#   - inetOrgPerson
-
-  # joinData:
-  # - id: data1
-  #   query: >- 
-  #       select a.groupname , a.username
-  #       from groups a 
-  #       inner join users b
-  #       on a.username = b.username
-  #   joinColumns: username=username
-  #   attributes:
-  #   - memberOf=groupname
-  #   idColumn: username
-  # objectClasses: 
-  # - inetOrgPerson
-
-
+- id: sql_users
+  enabled: true
+  suffix: ou=dbusers,dc=example,dc=com
+  sourceJdbcURL: "jdbc:mariadb://dev.local:3306/sourcedb"
+  sourceUsername: "sourceuser"
+  sourcePassword: "sourcepassword"
+  dnFormat: uid=%s
+  type: sql
+  query: select uid, concat(name, ' ', surname) as full_name, name, surname, phone, email from users
+  idColumn: uid
+  attributes:
+  - givenName=name
+  - sn=surname
+  - cn=uid
+  - telephoneNumber=phone
+  - mail=email
+  objectClasses:
+  - inetOrgPerson
+  joinData:
+  - id: data1
+    query: >- 
+        select concat('cn=',a.groupname, ',dc=example,dc=com') as groupname, b.uid
+        from groups a 
+        inner join users b
+        on a.userid = b.userid
+    joinColumns: uid=uid
+    attributes:
+    - memberOf=groupname
+    # Column from projection used to identify the match with parent source
+    idColumn: uid
+    
 # - id: sql_users
 #   enabled: true
 #   suffix: ou=users,dc=example,dc=org

@@ -24,7 +24,6 @@ WORKDIR "$SOURCE_DIR"/core
 RUN gradle distTar --no-daemon
 
 FROM docker.io/library/eclipse-temurin:17-jre-jammy
-EXPOSE 389
 ENV APP_DIR="/opt/app"
 ENV SOURCE_DIR="/opt/source"
 RUN echo 'APT::Keep-Downloaded-Packages "false";' > /etc/apt/apt.conf.d/00-disable-cache
@@ -42,6 +41,8 @@ ADD bin bin
 ADD core/conf padl/conf
 ADD core/source-config source-config
 ENV LDAP_ADM_PASSWORD="changeme"
+EXPOSE 389
+EXPOSE 3306
 
 ENTRYPOINT [ "/bin/bash", "-c" ]
 CMD [ "source ./bin/run.sh" ]
