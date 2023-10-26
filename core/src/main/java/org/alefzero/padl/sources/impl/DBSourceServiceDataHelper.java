@@ -9,8 +9,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DBSourceServiceDataHelper {
+	protected static final Logger logger = LogManager.getLogger();
 
 	private DBSourceConfiguration config;
 	private BasicDataSource bds = null;
@@ -50,6 +53,7 @@ public class DBSourceServiceDataHelper {
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
+			logger.error(e);
 		}
 		return metalist;
 	}
@@ -59,7 +63,7 @@ public class DBSourceServiceDataHelper {
 		PreparedStatement ps = conn.prepareStatement(query);
 		return ps.executeQuery();
 	}
-	
+
 	public void closeResources(ResultSet rs) throws SQLException {
 		Connection conn = rs.getStatement().getConnection();
 		rs.close();

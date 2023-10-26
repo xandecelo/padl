@@ -38,7 +38,6 @@ public class DBSourceServiceProxyHelper {
 
 	private List<String> temporaryTables = new LinkedList<String>();
 
-
 	public DBSourceServiceProxyHelper(DBSourceParameters params, DBSourceConfiguration config) {
 		this.params = params;
 		this.config = config;
@@ -64,11 +63,12 @@ public class DBSourceServiceProxyHelper {
 			bds.setMinIdle(2);
 			bds.setCacheState(false);
 		}
+		temporaryTables = getTempTables();
 	}
 
-
 	public void cleanDatabases() {
-		logger.debug("Running cleaning database process with base name [basename='{}", config.getDatabaseBaseName() + "%']");
+		logger.debug("Running cleaning database process with base name [basename='{}",
+				config.getDatabaseBaseName() + "%']");
 		try (Connection conn = adminBds.getConnection()) {
 			PreparedStatement ps = conn.prepareStatement(
 					"select schema_name from information_schema.schemata where schema_name like ? order by 1");
@@ -88,7 +88,18 @@ public class DBSourceServiceProxyHelper {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+			logger.error(e);
 		}
+
+	}
+
+	private List<String> getTempTables() {
+		List<String> result = new LinkedList<String>();
+		result.add(getTempTableName(config.getMetaTableName()));
+		if (config.getJoinData() != null) {
+			config.getJoinData().forEach(item -> result.add(getTempTableName(item.getMetaTableName())));
+		}
+		return result;
 
 	}
 
@@ -103,7 +114,6 @@ public class DBSourceServiceProxyHelper {
 
 				String tempTable = getTempTableName(tableName);
 				createSQL = getCreateSQLFor(tempTable, tableDefinition.get(tableName));
-				temporaryTables.add(tempTable);
 				ps = conn.prepareStatement(createSQL);
 				ps.executeUpdate();
 				ps.close();
@@ -111,13 +121,14 @@ public class DBSourceServiceProxyHelper {
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
+			logger.error(e);
 		}
 		return result;
 	}
 
 	private String getCreateSQLFor(String tableName, ResultSetMetaData resultSetMetaData) throws SQLException {
 		String sql = """
-				create or replace table %s (padl_source_id serial, %s )
+				create table if not exists %s (padl_source_id serial, %s )
 				""";
 
 		List<String> cols = new LinkedList<String>();
@@ -157,7 +168,7 @@ public class DBSourceServiceProxyHelper {
 		logger.debug("Creating metadata tables");
 
 		this.sqlUpdate("""
-				create table ldap_oc_mappings
+				create table if not exists ldap_oc_mappings
 				(
 					id integer unsigned not null primary key auto_increment,
 					name varchar(64) not null,
@@ -169,7 +180,7 @@ public class DBSourceServiceProxyHelper {
 				)
 				""");
 		this.sqlUpdate("""
-				create table ldap_attr_mappings
+				create table if not exists ldap_attr_mappings
 				(
 					id integer unsigned not null primary key auto_increment,
 					oc_map_id integer unsigned not null references ldap_oc_mappings(id),
@@ -187,7 +198,7 @@ public class DBSourceServiceProxyHelper {
 				""");
 
 		this.sqlUpdate("""
-				create table ldap_entries
+				create table if not exists ldap_entries
 				(
 					id integer unsigned not null primary key auto_increment,
 					dn varchar(255) not null,
@@ -199,7 +210,7 @@ public class DBSourceServiceProxyHelper {
 
 		this.sqlUpdate("""
 				alter table ldap_entries add
-				constraint unq1_ldap_entries unique
+				constraint unq1_ldap_entries unique if not exists
 				(
 					oc_map_id,
 					keyval
@@ -208,14 +219,14 @@ public class DBSourceServiceProxyHelper {
 
 		this.sqlUpdate("""
 				alter table ldap_entries add
-				constraint unq2_ldap_entries unique
+				constraint unq2_ldap_entries unique if not exists
 				(
 					dn
 				)
 				""");
 
 		this.sqlUpdate("""
-				create table ldap_entry_objclasses
+				create table if not exists ldap_entry_objclasses
 				(
 					entry_id integer unsigned not null references ldap_entries(id),
 					oc_name varchar(64)
@@ -226,11 +237,11 @@ public class DBSourceServiceProxyHelper {
 
 	public void createDNSuffixTable() {
 		this.sqlUpdate(String.format("""
-				create or replace table %s (suffix_id serial, suffix varchar(100))
+				create table if not exists %s (suffix_id serial, suffix varchar(100))
 				""", SUFFIXES_TABLE));
 
 		this.sqlUpdate(String.format("""
-				create or replace table %s (classname varchar(50))
+				create table if not exists %s (classname varchar(50))
 				""", EXTRA_CLASSES_TABLE));
 
 	}
@@ -278,6 +289,7 @@ public class DBSourceServiceProxyHelper {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+			logger.error(e);
 		}
 	}
 
@@ -288,6 +300,7 @@ public class DBSourceServiceProxyHelper {
 			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			logger.error(e);
 		}
 	}
 
@@ -340,11 +353,14 @@ public class DBSourceServiceProxyHelper {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+			logger.error(e);
 		}
 
 	}
 
 	public void cleanTempTables() {
+		logger.trace(".cleanTempTables()");
+		logger.debug("Cleaning temporary tables.");
 		try (Connection conn = bds.getConnection()) {
 			for (String table : temporaryTables) {
 				sqlUpdate(String.format("""
@@ -353,6 +369,7 @@ public class DBSourceServiceProxyHelper {
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
+			logger.error(e);
 		}
 	}
 
@@ -406,6 +423,8 @@ public class DBSourceServiceProxyHelper {
 
 	public void loadData(DBSourceServiceDataHelper helper) throws SQLException {
 
+		logger.debug("Loading data from source database.");
+
 		List<TableDataHelper> items = getTableDataHelper();
 
 		for (TableDataHelper item : items) {
@@ -450,6 +469,7 @@ public class DBSourceServiceProxyHelper {
 				helper.closeResources(sourceRs);
 			} catch (SQLException e) {
 				e.printStackTrace();
+				logger.error(e);
 			}
 
 		}
@@ -486,6 +506,7 @@ public class DBSourceServiceProxyHelper {
 	}
 
 	public void mergeData() {
+		logger.debug("Merging data from source into ldap tables.");
 
 		List<TableDataHelper> tableDatum = getTableDataHelper();
 
@@ -533,11 +554,14 @@ public class DBSourceServiceProxyHelper {
 
 			} catch (SQLException e) {
 				e.printStackTrace();
+				logger.error(e);
 			}
 		}
 	}
 
 	public void updateEntries() {
+		logger.debug("Adding entries to ldap instance.");
+
 		try (Connection conn = bds.getConnection()) {
 
 			String suffixDN = config.getSuffix();
@@ -605,6 +629,7 @@ public class DBSourceServiceProxyHelper {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+			logger.error(e);
 		}
 	}
 

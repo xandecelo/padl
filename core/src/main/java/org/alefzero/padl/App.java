@@ -16,14 +16,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class App {
-	
+
 	protected static final Logger logger = LogManager.getLogger();
 
 	private static final String DEFAULT_ACTION = "help";
 	private static final String DEFAULT_CONFIGURATION_FILENAME = System.getenv("$APP_DIR") + "./conf/padl.yaml";
 	private ScheduledFuture<?> executor = null;
-
-	private volatile boolean runProcessFlag = true;
 
 	public static void main(String[] args) {
 		logger.info("Padl is starting");
@@ -105,14 +103,16 @@ public class App {
 	}
 
 	private void runSyncProcess(PadlInstance instance) {
+		
+		instance.prepareSync();
+		
 		Thread shutdownListener = new Thread() {
 			public void run() {
-				logger.info("Requesting padl processes to stop (10s)...");
+				logger.info("Requesting padl processes to stop...");
 				try {
-					runProcessFlag = false;
 					if (executor != null) {
 						executor.cancel(false);
-						Thread.sleep(10_000);
+						Thread.sleep(1_000);
 					}
 					logger.info("Padl is shutdown.");
 				} catch (InterruptedException e) {
@@ -124,14 +124,19 @@ public class App {
 		Runtime.getRuntime().addShutdownHook(shutdownListener);
 
 		try {
-			executor = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> instance.sync(), 0, 120,
-					TimeUnit.SECONDS);
-
-			while (runProcessFlag) {
+			executor = Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
 				try {
-					Thread.sleep(3_000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+					logger.trace("Requesting sync process.");
+				} catch (Exception | Error e) {
+					logger.error("Sync error: {}", e.getCause(), e);
+				}
+			}, 0, 20, TimeUnit.SECONDS);
+
+			while (true) {
+				System.out.print("Press q and [Enter] to quit.");
+				String data = System.console().readLine();
+				if ("q".equalsIgnoreCase(data)) {
+					break;
 				}
 
 			}

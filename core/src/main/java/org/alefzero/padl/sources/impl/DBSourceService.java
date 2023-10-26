@@ -24,7 +24,7 @@ public class DBSourceService extends PadlSourceService {
 
 	@Override
 	public void sync() {
-
+		logger.trace(".sync()");
 		try {
 			proxyHelper.cleanTempTables();
 			proxyHelper.loadData(dataHelper);
@@ -32,7 +32,9 @@ public class DBSourceService extends PadlSourceService {
 			proxyHelper.updateEntries();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			logger.error(e);
 		}
+		logger.trace(".sync() endend.");
 	}
 
 	@Override

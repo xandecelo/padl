@@ -53,10 +53,13 @@ public class PadlInstance {
 	}
 
 	public void sync() {
-		logger.debug("Syncing process in action.");
+		logger.debug("Syncing process is up and running.");
 		for (var sourceConfig : config.getSourcesInConfigurationOrder()) {
+			logger.trace("Running sync for {}", sourceConfig.getId());
 			PadlSourceService source = manager.getSourceById(sourceConfig.getId());
 			source.sync();
+			logger.trace("Sync for {}", sourceConfig.getId());
+
 		}
 	}
 
