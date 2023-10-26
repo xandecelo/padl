@@ -88,6 +88,12 @@ tail -n 10 -F logs/padl.log &
 get_os_variables
 run_source_os_hooks
 
+echo; echo; echo 
+echo "Initializing services"
+echo; echo; echo 
+
+service mariadb start
+mariadb -uroot < bin/init.sql
 service slapd start
 
 test_connectivity

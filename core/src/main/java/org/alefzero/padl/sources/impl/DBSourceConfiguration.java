@@ -114,7 +114,7 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	}
 
 	public List<JoinData> getJoinData() {
-		return joinData;
+		return joinData != null ? joinData : new LinkedList<JoinData>();
 	}
 
 	public void setJoinData(List<JoinData> joinData) {

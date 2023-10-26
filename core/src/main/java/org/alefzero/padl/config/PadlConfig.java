@@ -86,7 +86,7 @@ public class PadlConfig {
 			logger.trace("Processing source [{}, {}] to configuration LDIF", source.getId(), source.getType());
 			if (this.getSuffix().equalsIgnoreCase(source.getSuffix())) {
 				sb.append("\n").append(source.getConfigurationLDIF().trim());
-				sb.append("olcRootPW: ").append(this.getAdminPassword());
+				sb.append("\nolcRootPW: ").append(this.getAdminPassword());
 				addDefaultMdbBack = false;
 			} else {
 				sb.append(source.getConfigurationLDIF());
