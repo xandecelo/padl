@@ -108,6 +108,7 @@ public class DBSourceServiceProxyHelper {
 		try (Connection conn = bds.getConnection()) {
 			for (String tableName : tableDefinition.keySet()) {
 				String createSQL = getCreateSQLFor(tableName, tableDefinition.get(tableName));
+				logger.trace("Creating auxiliary table with definitiion: {}", createSQL);
 				PreparedStatement ps = conn.prepareStatement(createSQL);
 				ps.executeUpdate();
 				ps.close();
