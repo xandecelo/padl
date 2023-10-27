@@ -19,6 +19,7 @@ public class DBSourceMeta {
             scale.add(meta.getScale(i + 1) < 0 ? 0 : meta.getScale(i + 1));
             precision.add(meta.getPrecision(i + 1) < 0 ? 0 : meta.getPrecision(i + 1));
             columnType.add(meta.getColumnType(i + 1));
+            columnName.add(meta.getColumnName(i + 1));
         }
     }
 
