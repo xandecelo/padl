@@ -3,7 +3,6 @@ package org.alefzero.padl.sources.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,11 +34,12 @@ public class DBSourceServiceDataHelper {
 		}
 	}
 
-	public Map<String, ResultSetMetaData> getTableDefinitions() {
-		Map<String, ResultSetMetaData> metalist = new HashMap<String, ResultSetMetaData>();
+	public Map<String, DBSourceMeta> getTableDefinitions() {
+		Map<String, DBSourceMeta> metalist = new HashMap<String, DBSourceMeta>();
 		try (Connection conn = bds.getConnection()) {
 			Map<String, String> queries = new HashMap<String, String>();
 			queries.put(config.getMetaTableName(), config.getQuery());
+			logger.trace("Getting table metadata information for {} -> {}", config.getMetaTableName(), config.getQuery());
 			if (config.getJoinData() != null) {
 				config.getJoinData().forEach(item -> queries.put(item.getMetaTableName(), item.getQuery()));
 			}
@@ -47,7 +47,7 @@ public class DBSourceServiceDataHelper {
 				String query = queries.get(id);
 				PreparedStatement ps = conn.prepareStatement(query);
 				ResultSet rs = ps.executeQuery();
-				metalist.put(id, rs.getMetaData());
+				metalist.put(id, new DBSourceMeta(rs.getMetaData()));
 				rs.close();
 				ps.close();
 			}

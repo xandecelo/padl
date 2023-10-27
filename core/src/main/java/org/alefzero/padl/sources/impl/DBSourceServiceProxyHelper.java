@@ -3,7 +3,6 @@ package org.alefzero.padl.sources.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.HashMap;
@@ -103,13 +102,13 @@ public class DBSourceServiceProxyHelper {
 
 	}
 
-	public boolean createTables(Map<String, ResultSetMetaData> tableDefinition) {
+	public boolean createTables(Map<String, DBSourceMeta> tableDefinition) {
 		boolean result = true;
 		try (Connection conn = bds.getConnection()) {
 			for (String tableName : tableDefinition.keySet()) {
 				String createSQL = getCreateSQLFor(tableName, tableDefinition.get(tableName));
 				logger.debug("Creating auxiliary table with definition: {}", createSQL);
-				
+
 				PreparedStatement ps = conn.prepareStatement(createSQL);
 				ps.executeUpdate();
 				ps.close();
@@ -128,7 +127,7 @@ public class DBSourceServiceProxyHelper {
 		return result;
 	}
 
-	private String getCreateSQLFor(String tableName, ResultSetMetaData resultSetMetaData) throws SQLException {
+	private String getCreateSQLFor(String tableName, DBSourceMeta resultSetMetaData) throws SQLException {
 		String sql = """
 				create table if not exists %s (padl_source_id serial, %s )
 				""";
@@ -143,7 +142,7 @@ public class DBSourceServiceProxyHelper {
 			} else {
 				precision = String.format("(%d)", resultSetMetaData.getPrecision(i));
 			}
-			cols.add(String.format("%s %s %s", resultSetMetaData.getColumnName(i),
+			cols.add(String.format("%s %s %s", resultSetMetaData.getColumnType(i),
 					getMariaDBTypeName(resultSetMetaData.getColumnType(i)), precision));
 		}
 		String result = String.format(sql, tableName, String.join(",", cols));
