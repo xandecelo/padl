@@ -22,6 +22,8 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	private String subtreeCond = "\"ldap_entries.dn LIKE CONCAT('%',?)\"";
 	private String insertEntryStatement = "\"insert into ldap_entries (dn,oc_map_id,parent,keyval) values (?,?,?,?)\"";
 
+	private boolean batchMode = true;
+
 	private String dnFormat;
 	private String query;
 	private String idColumn;
@@ -70,6 +72,14 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 
 	public void setInsertEntryStatement(String insertEntryStatement) {
 		this.insertEntryStatement = insertEntryStatement;
+	}
+
+	public boolean getBatchMode() {
+		return batchMode;
+	}
+
+	public void setBatchMode(boolean batchMode) {
+		this.batchMode = batchMode;
 	}
 
 	public String getDnFormat() {

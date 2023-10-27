@@ -153,14 +153,14 @@ public class DBSourceServiceProxyHelper {
 	private String getMariaDBTypeName(int columnType) {
 		String type;
 		switch (columnType) {
-		case Types.NUMERIC:
-		case Types.DECIMAL:
-			type = "DECIMAL";
-			break;
-		case Types.VARCHAR:
-		case Types.NVARCHAR:
-		default:
-			type = "VARCHAR";
+			case Types.NUMERIC:
+			case Types.DECIMAL:
+				type = "DECIMAL";
+				break;
+			case Types.VARCHAR:
+			case Types.NVARCHAR:
+			default:
+				type = "VARCHAR";
 		}
 		return type;
 	}
@@ -423,6 +423,10 @@ public class DBSourceServiceProxyHelper {
 	}
 
 	public void loadData(DBSourceServiceDataHelper helper) throws SQLException {
+		loadData(helper, true);
+	}
+
+	public void loadData(DBSourceServiceDataHelper helper, boolean batchLoad) throws SQLException {
 
 		logger.debug("Loading data from source database.");
 
@@ -448,24 +452,33 @@ public class DBSourceServiceProxyHelper {
 
 				ResultSet sourceRs = helper.getDataFor(item.getQuery());
 
-				int count = 0;
-				while (sourceRs.next()) {
-					for (int i = 0; i < item.getColumns().size(); i++) {
-						String col = item.getColumns().get(i);
-						psLoad.setObject(i + 1, sourceRs.getObject(col));
+				if (batchLoad) {
+					int count = 0;
+					while (sourceRs.next()) {
+						for (int i = 0; i < item.getColumns().size(); i++) {
+							String col = item.getColumns().get(i);
+							psLoad.setObject(i + 1, sourceRs.getObject(col));
+						}
+						psLoad.addBatch();
+						count++;
+						if (count > 10_000) {
+							psLoad.executeBatch();
+							count = 0;
+						}
 					}
-					psLoad.addBatch();
-					count++;
-					if (count > 10_000) {
+
+					if (count != 0) {
 						psLoad.executeBatch();
-						count = 0;
+					}
+				} else {
+					while (sourceRs.next()) {
+						for (int i = 0; i < item.getColumns().size(); i++) {
+							String col = item.getColumns().get(i);
+							psLoad.setObject(i + 1, sourceRs.getObject(col));
+						}
+						psLoad.executeUpdate();
 					}
 				}
-
-				if (count != 0) {
-					psLoad.executeBatch();
-				}
-
 				psLoad.close();
 				helper.closeResources(sourceRs);
 			} catch (SQLException e) {

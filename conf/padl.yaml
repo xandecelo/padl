@@ -25,6 +25,7 @@ sources:
   sourceJdbcURL: "jdbc:mariadb://dev.local:3306/sourcedb"
   sourceUsername: "sourceuser"
   sourcePassword: "sourcepassword"
+  batchMode: false
   dnFormat: uid=%s
   type: sql
   query: select uid, concat(name, ' ', surname) as full_name, name, surname, phone, email, 0 as cpf, 0 as atualizar from users
