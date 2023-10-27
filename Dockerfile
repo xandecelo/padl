@@ -40,6 +40,7 @@ RUN tar xvf "${APP_DIR}"/padl.tar && rm padl.tar
 ADD bin bin
 ADD core/conf padl/conf
 ADD core/source-config source-config
+ADD core/ldif ldif
 ENV LDAP_ADM_PASSWORD="changeme"
 EXPOSE 389
 EXPOSE 3306

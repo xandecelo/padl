@@ -83,6 +83,17 @@ olcObjectClasses: ( 1.2.840.113556.1.5.6 NAME 'memberOfAux' SUP top AUXILIARY MA
 EOF
 }
 
+
+configureUserConf() {
+    echo "Applying user configuration"
+    for userfile in ldif/*
+    do
+        echo "Adding user configuration file $userfile"
+        cat "${userfile}" | ldapmodify -Y EXTERNAL -H ldapi:/// -a 
+    done
+}
+
+
 check_yaml
 tail -n 10 -F logs/padl.log &
 get_os_variables
@@ -100,6 +111,7 @@ test_connectivity
 ldap_apply_dyngroup
 ldap_prepare_resources
 ldap_setup
+configureUserConf
 ldap_start_sync
 #echo "PADL LDAP is running. Press [q] and Enter to to quit."
 #while true; do IFS= read -d '' -n 1 ; [ "${REPLY,,}" = "q" ] && break; done
