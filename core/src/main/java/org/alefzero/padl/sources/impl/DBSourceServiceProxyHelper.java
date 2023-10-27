@@ -142,7 +142,7 @@ public class DBSourceServiceProxyHelper {
 			} else {
 				precision = String.format("(%d)", resultSetMetaData.getPrecision(i));
 			}
-			cols.add(String.format("%s %s %s", resultSetMetaData.getColumnType(i),
+			cols.add(String.format("%s %s %s", resultSetMetaData.getColumnName(i),
 					getMariaDBTypeName(resultSetMetaData.getColumnType(i)), precision));
 		}
 		String result = String.format(sql, tableName, String.join(",", cols));
