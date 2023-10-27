@@ -284,7 +284,11 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	private Integer getInstanceNumberId() {
 		Integer result = 0;
 		try {
+			String mode = System.getenv("DEV_MODE");
 			Path file = Paths.get("/opt/app/db_service_id");
+			if (mode != null && "true".equalsIgnoreCase(mode)) {
+				Files.write(file, "000".getBytes("UTF-8"));
+			}
 			if (!Files.exists(file)) {
 				String randomId = String.format("%03d", (new Random()).nextInt(999));
 				Files.write(file, randomId.getBytes());

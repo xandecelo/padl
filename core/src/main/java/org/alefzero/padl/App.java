@@ -37,34 +37,34 @@ public class App {
 			PadlInstance instance = new PadlInstance();
 			instance.loadConfiguration(configurationFile);
 			switch (action.toLowerCase()) {
-			case "check-yaml":
-				instance.checkYAML();
-				break;
-			case "get-os-variables":
-				instance.getGlobalOSVariables();
-				break;
-			case "check-connectivity":
-				instance.checkConnectivity();
-				break;
-			case "ldap-setup":
-				instance.getLDIFSetupConfiguration();
-				break;
-			case "source-os-script-list":
-				instance.getSourceOSScriptList();
-				break;
-			case "source-get-os-variables":
-				instance.getSourceParameterOSEnv(sourceType);
-				break;
-			case "sync":
-				runSyncProcess(instance);
-				break;
-			case "prepare":
-				runSyncOnce(instance);
-				break;
-			case "help":
-			default:
-				this.help();
-				break;
+				case "check-yaml":
+					instance.checkYAML();
+					break;
+				case "get-os-variables":
+					instance.getGlobalOSVariables();
+					break;
+				case "check-connectivity":
+					instance.checkConnectivity();
+					break;
+				case "ldap-setup":
+					instance.getLDIFSetupConfiguration();
+					break;
+				case "source-os-script-list":
+					instance.getSourceOSScriptList();
+					break;
+				case "source-get-os-variables":
+					instance.getSourceParameterOSEnv(sourceType);
+					break;
+				case "sync":
+					runSyncProcess(instance);
+					break;
+				case "prepare":
+					runSyncOnce(instance);
+					break;
+				case "help":
+				default:
+					this.help();
+					break;
 			}
 			System.exit(0);
 		} catch (IOException e) {
@@ -97,12 +97,13 @@ public class App {
 
 	private void runSyncOnce(PadlInstance instance) {
 		instance.prepareSync();
+		instance.sync();
 	}
 
 	private void runSyncProcess(PadlInstance instance) {
-		
+
 		instance.prepareSync();
-		
+
 		Thread shutdownListener = new Thread() {
 			public void run() {
 				logger.info("Requesting padl processes to stop...");

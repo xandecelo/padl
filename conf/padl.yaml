@@ -27,7 +27,7 @@ sources:
   sourcePassword: "sourcepassword"
   dnFormat: uid=%s
   type: sql
-  query: select uid, concat(name, ' ', surname) as full_name, name, surname, phone, email from users
+  query: select uid, concat(name, ' ', surname) as full_name, name, surname, phone, email, 0 as cpf, 0 as atualizar from users
   idColumn: uid
   attributes:
   - givenName=name
@@ -35,8 +35,11 @@ sources:
   - cn=uid
   - telephoneNumber=phone
   - mail=email
+  - cpf=cpf
+  - atualizar=atualizar
   objectClasses:
   - inetOrgPerson
+  - energiaInetOrgPerson
   joinData:
   - id: data1
     query: >- 

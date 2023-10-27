@@ -1,0 +1,50 @@
+dn: cn=extra,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: extra
+olcAttributeTypes: ( 1.3.6.1.4.1.66766.1.16 
+  NAME 'CdDespoSgra' 
+  DESC 'Atributo CdDespoSgra'
+  EQUALITY caseIgnoreMatch 
+  SUBSTR caseIgnoreSubstringsMatch 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.66766.1.17 
+  NAME 'tronco' 
+  DESC 'Atributo tronco' 
+  EQUALITY caseIgnoreMatch 
+  SUBSTR caseIgnoreSubstringsMatch 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.66766.1.18 
+  NAME 'orclguid' 
+  DESC 'Atributo orclGUID' 
+  EQUALITY caseIgnoreMatch 
+  SUBSTR caseIgnoreSubstringsMatch 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.66766.1.19 NAME 'userModifyTimestamp' 
+  DESC 'user modified timestamp' 
+  EQUALITY generalizedTimeMatch 
+  ORDERING generalizedTimeOrderingMatch 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 
+  SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.66766.1.20
+  NAME 'atualizar' 
+  DESC 'Atributo atualizar' 
+  EQUALITY caseIgnoreMatch 
+  SUBSTR caseIgnoreSubstringsMatch 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.66766.1.21
+  NAME 'matricula' 
+  DESC 'Atributo matricula' 
+  EQUALITY caseIgnoreMatch 
+  SUBSTR caseIgnoreSubstringsMatch 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+olcObjectClasses: ( 1.3.6.1.4.1.66766.3.1 NAME 'padlPeopleSource' DESC 'padlPeopleSource configuration' 
+  AUXILIARY MAY ( CdDespoSgra $ tronco $ orclguid $ userModifyTimestamp $ atualizar $ matricula) )
+olcAttributeTypes: ( 1.3.6.1.4.1.66766.1.15 
+  NAME 'modulo' 
+  DESC 'Atributo modulo' 
+  EQUALITY caseIgnoreMatch 
+  SUBSTR caseIgnoreSubstringsMatch 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 
+  SINGLE-VALUE )
+olcObjectClasses: ( 1.3.6.1.4.1.66766.3.2 NAME 'padlModuloGroups' DESC 'padlModuloGroups comfiguration' 
+  AUXILIARY MAY ( cn $ modulo) )

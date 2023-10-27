@@ -53,7 +53,14 @@ ldap_setup() {
     sleep 1
     local password=$(slappasswd -h {SSHA} -s ${LDAP_ADM_PASSWORD})
     $app "$conf" ldap-setup  | sed "s|%%LDAP_ROOT_PASSWORD%%|$password|" | cat
-    $app "$conf" ldap-setup  | sed "s|%%LDAP_ROOT_PASSWORD%%|$password|" | ldapmodify -Y EXTERNAL -H ldapi:/// -a 
+    $app "$conf" ldap-setup  | sed "s|%%LDAP_ROOT_PASSWORD%%|$password|" | ldapmodify -c -Y EXTERNAL -H ldapi:/// -a
+    result=$?
+    if [ $result != 0 ]; 
+    then
+        sleep 3
+        echo
+        read -p "Error configuring ldap. Press Enter to continue" < /dev/tty
+    fi
     echo "done."
 }
 
@@ -84,7 +91,7 @@ EOF
 }
 
 
-configureUserConf() {
+configure_user_ldifs() {
     echo "Applying user configuration"
     for userfile in ldif/*
     do
@@ -92,7 +99,6 @@ configureUserConf() {
         cat "${userfile}" | ldapmodify -Y EXTERNAL -H ldapi:/// -a 
     done
 }
-
 
 check_yaml
 tail -n 10 -F logs/padl.log &
@@ -102,18 +108,22 @@ run_source_os_hooks
 echo; echo; echo 
 echo "Initializing services"
 echo; echo; echo 
-
 service mariadb start
 mariadb -uroot < bin/init.sql
-service slapd start
+
+
+#service slapd start
+nohup /usr/sbin/slapd -h "ldap:/// ldapi:///" -g openldap -u openldap -F /etc/ldap/slapd.d -d 7 > /opt/app/logs/ldap.log 2>&1 &
 
 test_connectivity
 ldap_apply_dyngroup
 ldap_prepare_resources
+configure_user_ldifs
 ldap_setup
-configureUserConf
 ldap_start_sync
+
 #echo "PADL LDAP is running. Press [q] and Enter to to quit."
 #while true; do IFS= read -d '' -n 1 ; [ "${REPLY,,}" = "q" ] && break; done
+
 echo  "PADL is shutdown"
 exit 0

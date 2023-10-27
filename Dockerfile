@@ -38,12 +38,14 @@ WORKDIR ${APP_DIR}
 COPY --from=build "$SOURCE_DIR"/core/build/distributions/padl.tar ${APP_DIR}
 RUN tar xvf "${APP_DIR}"/padl.tar && rm padl.tar
 ADD bin bin
-ADD core/conf padl/conf
-ADD core/source-config source-config
-ADD core/ldif ldif
+ADD conf padl/conf
+ADD source-config source-config
+ADD ldif ldif
 ENV LDAP_ADM_PASSWORD="changeme"
+ENV DEV_MODE=true
 EXPOSE 389
 EXPOSE 3306
+EXPOSE 3308
 
 ENTRYPOINT [ "/bin/bash", "-c" ]
 CMD [ "source ./bin/run.sh" ]
