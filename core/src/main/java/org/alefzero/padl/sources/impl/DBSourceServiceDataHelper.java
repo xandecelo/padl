@@ -34,20 +34,50 @@ public class DBSourceServiceDataHelper {
 		}
 	}
 
+	private class QueryItem {
+		private String query;
+		private String idColumn;
+
+		public QueryItem(String query, String idColumn) {
+			this.setQuery(query);
+			this.setIdColumn(idColumn);
+		}
+
+		public String getQuery() {
+			return query;
+		}
+
+		public void setQuery(String query) {
+			this.query = query;
+		}
+
+		public String getIdColumn() {
+			return idColumn;
+		}
+
+		public void setIdColumn(String idColumn) {
+			this.idColumn = idColumn;
+		}
+
+	}
+
 	public Map<String, DBSourceMeta> getTableDefinitions() {
 		Map<String, DBSourceMeta> metalist = new HashMap<String, DBSourceMeta>();
 		try (Connection conn = bds.getConnection()) {
-			Map<String, String> queries = new HashMap<String, String>();
-			queries.put(config.getMetaTableName(), config.getQuery());
-			logger.trace("Getting table metadata information for {} -> {}", config.getMetaTableName(), config.getQuery());
+			Map<String, QueryItem> queries = new HashMap<String, QueryItem>();
+
+			queries.put(config.getMetaTableName(), new QueryItem(config.getQuery(), config.getIdColumn()));
+			logger.trace("Getting table metadata information for {} -> {}", config.getMetaTableName(),
+					config.getQuery());
 			if (config.getJoinData() != null) {
-				config.getJoinData().forEach(item -> queries.put(item.getMetaTableName(), item.getQuery()));
+				config.getJoinData().forEach(item -> queries.put(item.getMetaTableName(),
+						new QueryItem(item.getQuery(), config.getIdColumn())));
 			}
 			for (String id : queries.keySet()) {
-				String query = queries.get(id);
-				PreparedStatement ps = conn.prepareStatement(query);
+				QueryItem query = queries.get(id);
+				PreparedStatement ps = conn.prepareStatement(query.getQuery());
 				ResultSet rs = ps.executeQuery();
-				metalist.put(id, new DBSourceMeta(rs.getMetaData()));
+				metalist.put(id, new DBSourceMeta(rs.getMetaData(), query.getIdColumn()));
 				rs.close();
 				ps.close();
 			}

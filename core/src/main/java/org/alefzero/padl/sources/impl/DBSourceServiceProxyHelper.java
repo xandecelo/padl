@@ -105,21 +105,25 @@ public class DBSourceServiceProxyHelper {
 	public boolean createTables(Map<String, DBSourceMeta> tableDefinition) {
 		boolean result = true;
 		try (Connection conn = bds.getConnection()) {
+			List<String> sqls = new LinkedList<String>();
 			for (String tableName : tableDefinition.keySet()) {
-				String createSQL = getCreateSQLFor(tableName, tableDefinition.get(tableName));
-				logger.debug("Creating auxiliary table with definition: {}", createSQL);
-
-				PreparedStatement ps = conn.prepareStatement(createSQL);
-				ps.executeUpdate();
-				ps.close();
-
-				String tempTable = getTempTableName(tableName);
-				createSQL = getCreateSQLFor(tempTable, tableDefinition.get(tableName));
-				ps = conn.prepareStatement(createSQL);
-				ps.executeUpdate();
-				ps.close();
+				sqls.addAll(getMetadataTableDefinitionsFor(tableName, tableDefinition.get(tableName)));
+				sqls.addAll(
+						getMetadataTableDefinitionsFor(getTempTableName(tableName), tableDefinition.get(tableName)));
 
 			}
+			sqls.forEach(sql -> {
+				try {
+					logger.debug("Creating auxiliary sql structure with definition: {}", sql);
+					PreparedStatement ps = conn.prepareStatement(sql);
+					ps.executeUpdate();
+					ps.close();
+				} catch (SQLException e) {
+					logger.error("Error running sql: {}", sql, e);
+					e.printStackTrace();
+				}
+			});
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 			logger.error(e);
@@ -127,10 +131,11 @@ public class DBSourceServiceProxyHelper {
 		return result;
 	}
 
-	private String getCreateSQLFor(String tableName, DBSourceMeta resultSetMetaData) throws SQLException {
-		String sql = """
-				create table if not exists %s (padl_source_id serial, %s )
-				""";
+	private List<String> getMetadataTableDefinitionsFor(String tableName, DBSourceMeta resultSetMetaData)
+			throws SQLException {
+		List<String> definitions = new LinkedList<String>();
+
+		String sql = "create table if not exists %s (padl_source_id serial, %s )";
 
 		List<String> cols = new LinkedList<String>();
 
@@ -145,9 +150,21 @@ public class DBSourceServiceProxyHelper {
 			cols.add(String.format("%s %s %s", resultSetMetaData.getColumnName(i),
 					getMariaDBTypeName(resultSetMetaData.getColumnType(i)), precision));
 		}
-		String result = String.format(sql, tableName, String.join(",", cols));
-		logger.debug("Returning create SQL: {}", result);
-		return result;
+		String createTable = String.format(sql, tableName, String.join(",", cols));
+
+		String indexForIds = String.format("create or replace index ndx_padl_source_id on %s(padl_source_id)",
+				tableName);
+
+		String indexForOriginalSourceKey = String.format("create or replace index ndx_%s on %s(%s)",
+				resultSetMetaData.getIdColumn(), tableName, resultSetMetaData.getIdColumn());
+
+		definitions.add(createTable);
+		definitions.add(indexForIds);
+		definitions.add(indexForOriginalSourceKey);
+
+		logger.debug("Returning create and index SQLs: {}", definitions.toArray());
+
+		return definitions;
 	}
 
 	private String getMariaDBTypeName(int columnType) {

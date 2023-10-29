@@ -11,8 +11,9 @@ public class DBSourceMeta {
     public List<String> columnName = new LinkedList<String>();
     public List<Integer> precision = new LinkedList<Integer>();
     public List<Integer> scale = new LinkedList<Integer>();
+    public String idColumn;
 
-    public DBSourceMeta(ResultSetMetaData meta) throws SQLException {
+    public DBSourceMeta(ResultSetMetaData meta, String idColumn) throws SQLException {
         columnCount = meta.getColumnCount();
         for (int i = 0; i < columnCount; i++) {
             // Follow SQL convention of 1st col index = 1
@@ -20,6 +21,7 @@ public class DBSourceMeta {
             precision.add(meta.getPrecision(i + 1) < 0 ? 0 : meta.getPrecision(i + 1));
             columnType.add(meta.getColumnType(i + 1));
             columnName.add(meta.getColumnName(i + 1));
+            this.idColumn = idColumn;
         }
     }
 
@@ -45,6 +47,14 @@ public class DBSourceMeta {
 
     public int getColumnCount() {
         return columnCount;
+    }
+
+    public String getIdColumn() {
+        return idColumn;
+    }
+
+    public void setIdColumn(String idColumn) {
+        this.idColumn = idColumn;
     }
 
 }
