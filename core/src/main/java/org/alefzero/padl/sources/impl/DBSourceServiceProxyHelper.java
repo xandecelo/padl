@@ -475,15 +475,17 @@ public class DBSourceServiceProxyHelper {
 
 			colValues = colValues.substring(0, colValues.length() - 1);
 
-			String sqlInsert = String.format(template, getTempTableName(item.getTableName()),
+			String tempTableName = getTempTableName(item.getTableName());
+
+			String sqlInsert = String.format(template, tempTableName,
 					String.join(",", item.getColumns()), colValues);
 
 			logger.debug("Loading data with: {}, batchmode: {} , batchSize: {}", sqlInsert, batchLoad, batchSize);
 
 			try (Connection conn = bds.getConnection()) {
-				logger.debug("Running: {}", String.format("alter table %s disable keys", item.getTableName()));
+				logger.debug("Running: {}", String.format("alter table %s disable keys", tempTableName));
 
-				conn.prepareStatement(String.format("alter table %s disable keys", item.getTableName()))
+				conn.prepareStatement(String.format("alter table %s disable keys", tempTableName))
 						.executeUpdate();
 
 				PreparedStatement psLoad = conn.prepareStatement(sqlInsert);
@@ -533,8 +535,8 @@ public class DBSourceServiceProxyHelper {
 				logger.error(e);
 			}
 			try (Connection conn = bds.getConnection()) {
-				logger.debug("Running: {}", String.format("alter table %s enable keys", item.getTableName()));
-				conn.prepareStatement(String.format("alter table %s enable keys", item.getTableName()))
+				logger.debug("Running: {}", String.format("alter table %s enable keys", tempTableName));
+				conn.prepareStatement(String.format("alter table %s enable keys", tempTableName))
 						.executeUpdate();
 			} catch (SQLException e) {
 				e.printStackTrace();
