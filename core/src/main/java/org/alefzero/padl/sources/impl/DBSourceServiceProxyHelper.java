@@ -478,9 +478,11 @@ public class DBSourceServiceProxyHelper {
 			String sqlInsert = String.format(template, getTempTableName(item.getTableName()),
 					String.join(",", item.getColumns()), colValues);
 
-			logger.debug("Loading data with: {}, batchmode: {} ", sqlInsert, batchLoad);
+			logger.debug("Loading data with: {}, batchmode: {} , batchSize: {}", sqlInsert, batchLoad, batchSize);
 
 			try (Connection conn = bds.getConnection()) {
+				logger.debug("Running: {}", String.format("alter table %s disable keys", item.getTableName()));
+
 				conn.prepareStatement(String.format("alter table %s disable keys", item.getTableName()))
 						.executeUpdate();
 
@@ -531,10 +533,9 @@ public class DBSourceServiceProxyHelper {
 				logger.error(e);
 			}
 			try (Connection conn = bds.getConnection()) {
-
+				logger.debug("Running: {}", String.format("alter table %s enable keys", item.getTableName()));
 				conn.prepareStatement(String.format("alter table %s enable keys", item.getTableName()))
 						.executeUpdate();
-
 			} catch (SQLException e) {
 				e.printStackTrace();
 				logger.error(e);
