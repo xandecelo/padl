@@ -144,7 +144,6 @@ public class DBSourceServiceProxyHelper {
 		for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
 			String precision;
 			int sourcePrecision = resultSetMetaData.getPrecision(i);
-			sourcePrecision = sourcePrecision > 1000 ? 1000 : sourcePrecision;
 			if (resultSetMetaData.getColumnType(i) == Types.DECIMAL
 					|| resultSetMetaData.getColumnType(i) == Types.NUMERIC) {
 				precision = String.format("(%d,%d)", sourcePrecision, resultSetMetaData.getScale(i));
@@ -469,6 +468,9 @@ public class DBSourceServiceProxyHelper {
 			logger.debug("Loading data with: {}, batchmode: {} ", sqlInsert, batchLoad);
 
 			try (Connection conn = bds.getConnection()) {
+				conn.prepareStatement(String.format("alter table %s disable keys", item.getTableName()))
+						.executeUpdate();
+
 				PreparedStatement psLoad = conn.prepareStatement(sqlInsert);
 
 				ResultSet sourceRs = helper.getDataFor(item.getQuery());
@@ -512,7 +514,15 @@ public class DBSourceServiceProxyHelper {
 				e.printStackTrace();
 				logger.error(e);
 			}
+			try (Connection conn = bds.getConnection()) {
 
+				conn.prepareStatement(String.format("alter table %s enable keys", item.getTableName()))
+						.executeUpdate();
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				logger.error(e);
+			}
 		}
 
 	}
