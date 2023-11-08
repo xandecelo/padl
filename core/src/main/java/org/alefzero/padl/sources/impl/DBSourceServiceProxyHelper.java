@@ -28,7 +28,7 @@ public class DBSourceServiceProxyHelper {
 
 	private static final Object EXTRA_CLASSES_TABLE = "extra_classes";
 
-	private static final int BATCH_COUNT = 1_000;
+	private static final int BATCH_COUNT = 1;
 
 	private BasicDataSource adminBds = null;
 	private BasicDataSource bds = null;
@@ -143,11 +143,13 @@ public class DBSourceServiceProxyHelper {
 
 		for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
 			String precision;
+			int sourcePrecision = resultSetMetaData.getPrecision(i);
+			sourcePrecision = sourcePrecision > 1000 ? 1000 : sourcePrecision;
 			if (resultSetMetaData.getColumnType(i) == Types.DECIMAL
 					|| resultSetMetaData.getColumnType(i) == Types.NUMERIC) {
-				precision = String.format("(%d,%d)", resultSetMetaData.getPrecision(i), resultSetMetaData.getScale(i));
+				precision = String.format("(%d,%d)", sourcePrecision, resultSetMetaData.getScale(i));
 			} else {
-				precision = String.format("(%d)", resultSetMetaData.getPrecision(i));
+				precision = String.format("(%d)", sourcePrecision);
 			}
 			cols.add(String.format("%s %s %s", resultSetMetaData.getColumnName(i),
 					getMariaDBTypeName(resultSetMetaData.getColumnType(i)), precision));
