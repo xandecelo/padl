@@ -28,7 +28,7 @@ public class DBSourceServiceProxyHelper {
 
 	private static final Object EXTRA_CLASSES_TABLE = "extra_classes";
 
-	private static final int BATCH_COUNT = 10;
+	private static final int BATCH_COUNT = 1_000;
 
 	private BasicDataSource adminBds = null;
 	private BasicDataSource bds = null;
@@ -464,7 +464,7 @@ public class DBSourceServiceProxyHelper {
 			String sqlInsert = String.format(template, getTempTableName(item.getTableName()),
 					String.join(",", item.getColumns()), colValues);
 
-			logger.debug("Loading data with: " + sqlInsert);
+			logger.debug("Loading data with: {}, batchmode: {} ", sqlInsert, batchLoad);
 
 			try (Connection conn = bds.getConnection()) {
 				PreparedStatement psLoad = conn.prepareStatement(sqlInsert);
