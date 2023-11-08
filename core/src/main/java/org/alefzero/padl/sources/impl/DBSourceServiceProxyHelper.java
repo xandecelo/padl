@@ -28,6 +28,8 @@ public class DBSourceServiceProxyHelper {
 
 	private static final Object EXTRA_CLASSES_TABLE = "extra_classes";
 
+	private static final int BATCH_COUNT = 10;
+
 	private BasicDataSource adminBds = null;
 	private BasicDataSource bds = null;
 	private DBSourceParameters params;
@@ -468,25 +470,31 @@ public class DBSourceServiceProxyHelper {
 				PreparedStatement psLoad = conn.prepareStatement(sqlInsert);
 
 				ResultSet sourceRs = helper.getDataFor(item.getQuery());
-
 				if (batchLoad) {
-					int count = 0;
-					while (sourceRs.next()) {
-						for (int i = 0; i < item.getColumns().size(); i++) {
-							String col = item.getColumns().get(i);
-							psLoad.setObject(i + 1, sourceRs.getObject(col));
+					String lastId = "";
+					try {
+						int count = 0;
+						while (sourceRs.next()) {
+							lastId = sourceRs.getString(item.getIdColumn());
+							for (int i = 0; i < item.getColumns().size(); i++) {
+								String col = item.getColumns().get(i);
+								psLoad.setObject(i + 1, sourceRs.getObject(col));
+							}
+							psLoad.addBatch();
+							count++;
+							if (count > BATCH_COUNT) {
+								psLoad.executeBatch();
+								count = 0;
+							}
 						}
-						psLoad.addBatch();
-						count++;
-						if (count > 10_000) {
+						if (count != 0) {
 							psLoad.executeBatch();
-							count = 0;
 						}
+					} catch (SQLException e) {
+						e.printStackTrace();
+						logger.error("Error processing batch for {}: {}", lastId, e);
 					}
 
-					if (count != 0) {
-						psLoad.executeBatch();
-					}
 				} else {
 					while (sourceRs.next()) {
 						for (int i = 0; i < item.getColumns().size(); i++) {
