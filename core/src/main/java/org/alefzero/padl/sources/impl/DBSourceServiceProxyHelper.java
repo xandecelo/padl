@@ -28,7 +28,7 @@ public class DBSourceServiceProxyHelper {
 
 	private static final Object EXTRA_CLASSES_TABLE = "extra_classes";
 
-	private static final int BATCH_COUNT = 1;
+	private int batchSize = 100;
 
 	private BasicDataSource adminBds = null;
 	private BasicDataSource bds = null;
@@ -42,6 +42,8 @@ public class DBSourceServiceProxyHelper {
 	public DBSourceServiceProxyHelper(DBSourceParameters params, DBSourceConfiguration config) {
 		this.params = params;
 		this.config = config;
+
+		this.batchSize = config.getDbBatchSize();
 
 		if (adminBds == null) {
 			adminBds = new BasicDataSource();
@@ -399,13 +401,24 @@ public class DBSourceServiceProxyHelper {
 		private String query;
 		private List<String> columns;
 		private String idColumn;
+		private Boolean testLoadMode;
 
-		public TableDataHelper(String tableName, String uidCol, String query, List<String> columns) {
+		public TableDataHelper(String tableName, String uidCol, String query, List<String> columns,
+				Boolean toBeLoaded) {
 			super();
 			this.tableName = tableName;
 			this.idColumn = uidCol;
 			this.query = query;
 			this.columns = columns;
+			this.testLoadMode = toBeLoaded;
+		}
+
+		public Boolean getTestLoadMode() {
+			return testLoadMode;
+		}
+
+		public void setTestLoadMode(Boolean toBeLoaded) {
+			this.testLoadMode = toBeLoaded;
 		}
 
 		public String getTableName() {
@@ -474,6 +487,7 @@ public class DBSourceServiceProxyHelper {
 				PreparedStatement psLoad = conn.prepareStatement(sqlInsert);
 
 				ResultSet sourceRs = helper.getDataFor(item.getQuery());
+
 				if (batchLoad) {
 					String lastId = "";
 					try {
@@ -486,12 +500,12 @@ public class DBSourceServiceProxyHelper {
 							}
 							psLoad.addBatch();
 							count++;
-							if (count > BATCH_COUNT) {
+							if ((!item.getTestLoadMode()) && count > batchSize) {
 								psLoad.executeBatch();
 								count = 0;
 							}
 						}
-						if (count != 0) {
+						if ((!item.getTestLoadMode()) && count != 0) {
 							psLoad.executeBatch();
 						}
 					} catch (SQLException e) {
@@ -505,7 +519,9 @@ public class DBSourceServiceProxyHelper {
 							String col = item.getColumns().get(i);
 							psLoad.setObject(i + 1, sourceRs.getObject(col));
 						}
-						psLoad.executeUpdate();
+						if ((!item.getTestLoadMode())) {
+							psLoad.executeUpdate();
+						}
 					}
 				}
 				psLoad.close();
@@ -532,7 +548,7 @@ public class DBSourceServiceProxyHelper {
 		LinkedList<TableDataHelper> tableDatum = new LinkedList<TableDataHelper>();
 
 		TableDataHelper tableData = new TableDataHelper(config.getMetaTableName(), config.getIdColumn(),
-				config.getQuery(), new LinkedList<String>(config.getDbtoldap().keySet()));
+				config.getQuery(), new LinkedList<String>(config.getDbtoldap().keySet()), config.getTestLoadMode());
 
 		if (!tableData.getColumns().contains(config.getIdColumn())) {
 			tableData.getColumns().add(config.getIdColumn());
@@ -545,7 +561,8 @@ public class DBSourceServiceProxyHelper {
 			if (!list.contains(config.getIdColumn())) {
 				list.add(config.getIdColumn());
 			}
-			tableDatum.add(new TableDataHelper(item.getMetaTableName(), item.getIdColumn(), item.getQuery(), list));
+			tableDatum.add(new TableDataHelper(item.getMetaTableName(), item.getIdColumn(), item.getQuery(), list,
+					config.getTestLoadMode()));
 
 		});
 

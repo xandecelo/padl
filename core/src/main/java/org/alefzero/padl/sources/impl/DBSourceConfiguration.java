@@ -30,6 +30,8 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	private String[] attributes;
 	private List<JoinData> joinData;
 	private List<String> objectClasses;
+	private Integer dbBatchSize = 100;
+	private Boolean testLoadMode = false;
 
 	private Map<String, String> ldaptodb = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 	private Map<String, String> dbtoldap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
@@ -253,6 +255,23 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 			this.idColumn = idColumn;
 		}
 
+	}
+
+	public Boolean getTestLoadMode() {
+		return testLoadMode;
+	}
+
+	public void setTestLoadMode(Boolean testLoadMode) {
+		this.testLoadMode = testLoadMode;
+	}
+
+
+	public Integer getDbBatchSize() {
+		return dbBatchSize;
+	}
+
+	public void setDbBatchSize(Integer dbBatchSize) {
+		this.dbBatchSize = dbBatchSize;
 	}
 
 	@Override
