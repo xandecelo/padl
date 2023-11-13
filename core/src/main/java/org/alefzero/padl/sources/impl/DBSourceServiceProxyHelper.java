@@ -386,9 +386,8 @@ public class DBSourceServiceProxyHelper {
 		logger.debug("Cleaning temporary tables.");
 		try (Connection conn = bds.getConnection()) {
 			for (String table : temporaryTables) {
-				sqlUpdate(String.format("""
-						delete from %s
-						""", table));
+				// sqlUpdate(String.format("delete from %s", table));
+				sqlUpdate(String.format("truncate table %s", table));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -467,9 +466,7 @@ public class DBSourceServiceProxyHelper {
 
 		for (TableDataHelper item : items) {
 
-			String template = """
-					insert into %s ( %s )  values ( %s )
-					""";
+			String template = "insert into %s ( %s )  values ( %s )";
 
 			String colValues = "?,".repeat(item.getColumns().size());
 
