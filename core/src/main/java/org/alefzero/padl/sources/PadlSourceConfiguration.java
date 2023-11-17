@@ -109,7 +109,7 @@ public abstract class PadlSourceConfiguration implements Comparable<PadlSourceCo
 	}
 
 	public void setInstanceId(String instanceId) {
-		this.instanceId = instanceId;
+		this.instanceId = instanceId.toLowerCase();
 	}
 
 	public String getBaseSuffix() {
