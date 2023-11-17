@@ -77,8 +77,6 @@ public class PadlConfig {
 		sb.append(getDeleteDefaultPassword());
 		sb.append("\n\n");
 
-		sb.append(getDeleteDefaultMdbLDIF());
-		sb.append("\n\n");
 
 		boolean addDefaultMdbBack = true;
 
@@ -97,6 +95,9 @@ public class PadlConfig {
 
 			sb.append("\n\n");
 		}
+		
+		sb.append(getDeleteDefaultMdbLDIF());
+		sb.append("\n\n");
 
 		if (addDefaultMdbBack) {
 			sb.append(getDefaultMdbConfiguration());
