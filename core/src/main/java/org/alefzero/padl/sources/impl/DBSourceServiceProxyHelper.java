@@ -228,17 +228,22 @@ public class DBSourceServiceProxyHelper {
 				)
 				""");
 
-		this.sqlUpdate("""
-				create table if not exists ldap_entry_objclasses
-				(
-					entry_id integer unsigned not null references ldap_entries(id),
-					oc_name varchar(64)
-				)
-				""");
+		// this.sqlUpdate("""
+		// create table if not exists ldap_entry_objclasses
+		// (
+		// entry_id integer unsigned not null references ldap_entries(id),
+		// oc_name varchar(64)
+		// )
+		// """);
+
+		this.sqlUpdate(String.format("""
+					create view ldap_entry_objclasses as select a.id as entry_id, b.classname as oc_name
+					from ldap_entries a, extra_classes b where a.oc_map_id = %d;
+				""", PROXY_OBJECT_CLASS_ID);
 
 	}
 
-	public void createDNSuffixTable() {
+	public void createPadlSupportTables() {
 		this.sqlUpdate(String.format("""
 				create table if not exists %s (suffix_id serial, suffix varchar(100))
 				""", SUFFIXES_TABLE));
