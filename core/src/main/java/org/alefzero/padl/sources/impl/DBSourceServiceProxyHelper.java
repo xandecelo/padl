@@ -727,6 +727,7 @@ public class DBSourceServiceProxyHelper {
 
 		try (Connection conn = adminBds.getConnection()) {
 			PreparedStatement psExpired = conn.prepareStatement(sqlGetExpiredInstancesDBNames);
+			psExpired.setString(1, config.getDatabaseBaseName());
 			ResultSet rsExpired = psExpired.executeQuery();
 			while (rsExpired.next()) {
 				conn.prepareStatement("drop database if exists " + rsExpired.getString(1)).executeUpdate();
