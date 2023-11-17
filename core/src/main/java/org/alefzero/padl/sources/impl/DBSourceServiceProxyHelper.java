@@ -593,7 +593,7 @@ public class DBSourceServiceProxyHelper {
 							  except
 							  select %s from %s
 						   ) as temptable
-						   proxytable.%s = temptable.%s
+						   on proxytable.%s = temptable.%s
 						)
 						""", proxyTableName, proxyTableName, allCols, proxyTableName, allCols, tempTableName, idColumn,
 						idColumn);
