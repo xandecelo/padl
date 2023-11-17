@@ -793,7 +793,7 @@ public class DBSourceServiceProxyHelper {
 	}
 
 	public void setDbCurrentStatus(String databaseFullName, MetaDbStatus configured) {
-		String sqlGetCurrentStatus = "update padl_meta.instances(status) set status = ? where instance_dbname = ?";
+		String sqlGetCurrentStatus = "update padl_meta.instances set status = ? where instance_dbname = ?";
 		try (Connection conn = adminBds.getConnection()) {
 			PreparedStatement ps = conn.prepareStatement(sqlGetCurrentStatus);
 			ps.setString(1, configured.toString());
