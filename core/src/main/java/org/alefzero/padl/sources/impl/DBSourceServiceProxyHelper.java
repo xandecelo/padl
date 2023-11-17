@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.alefzero.padl.exceptions.PadlUnrecoverableError;
 import org.alefzero.padl.sources.impl.DBSourceConfiguration.JoinData;
@@ -26,7 +25,9 @@ public class DBSourceServiceProxyHelper {
 
 	private static final String SUFFIXES_TABLE = "suffixes";
 
-	private static final Object EXTRA_CLASSES_TABLE = "extra_classes";
+	private static final String EXTRA_CLASSES_TABLE = "extra_classes";
+
+	private static final Integer EXPIRATION_TIME_IN_MINUTES = 60;
 
 	private int batchSize = 100;
 
@@ -69,33 +70,6 @@ public class DBSourceServiceProxyHelper {
 		temporaryTables = getTempTables();
 	}
 
-	public void cleanDatabases() {
-		logger.debug("Running cleaning database process with base name [basename='{}",
-				config.getDatabaseBaseName() + "%']");
-		try (Connection conn = adminBds.getConnection()) {
-			PreparedStatement ps = conn.prepareStatement(
-					"select schema_name from information_schema.schemata where schema_name like ? order by 1");
-			ps.setString(1, config.getDatabaseBaseName() + "%");
-			ResultSet rs = ps.executeQuery();
-			while (rs.next()) {
-				logger.debug("Removing schema {}.", rs.getString(1));
-				PreparedStatement psRemove = conn.prepareStatement("drop database " + rs.getString(1));
-				psRemove.executeUpdate();
-				psRemove.close();
-			}
-			rs.close();
-			ps.close();
-			PreparedStatement psCreate = conn.prepareStatement("create database " + config.getDatabaseFullName());
-			psCreate.executeUpdate();
-			psCreate.close();
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			logger.error(e);
-		}
-
-	}
-
 	private List<String> getTempTables() {
 		List<String> result = new LinkedList<String>();
 		result.add(getTempTableName(config.getMetaTableName()));
@@ -111,9 +85,10 @@ public class DBSourceServiceProxyHelper {
 		try (Connection conn = bds.getConnection()) {
 			List<String> sqls = new LinkedList<String>();
 			for (String tableName : tableDefinition.keySet()) {
-				sqls.addAll(getMetadataTableDefinitionsFor(tableName, tableDefinition.get(tableName)));
+				sqls.addAll(getMetadataTableDefinitionsFor(tableName, tableDefinition.get(tableName), true));
 				sqls.addAll(
-						getMetadataTableDefinitionsFor(getTempTableName(tableName), tableDefinition.get(tableName)));
+						getMetadataTableDefinitionsFor(getTempTableName(tableName), tableDefinition.get(tableName),
+								false));
 
 			}
 			sqls.forEach(sql -> {
@@ -135,11 +110,12 @@ public class DBSourceServiceProxyHelper {
 		return result;
 	}
 
-	private List<String> getMetadataTableDefinitionsFor(String tableName, DBSourceMeta resultSetMetaData)
+	private List<String> getMetadataTableDefinitionsFor(String tableName, DBSourceMeta resultSetMetaData, boolean hasId)
 			throws SQLException {
 		List<String> definitions = new LinkedList<String>();
 
-		String sql = "create table if not exists %s (padl_source_id serial, %s )";
+		String sql = "create table if not exists %s ( %s %s )";
+		String colPadlId = hasId ? "padl_source_id serial, " : "";
 
 		List<String> cols = new LinkedList<String>();
 
@@ -155,17 +131,21 @@ public class DBSourceServiceProxyHelper {
 			cols.add(String.format("%s %s %s", resultSetMetaData.getColumnName(i),
 					getMariaDBTypeName(resultSetMetaData.getColumnType(i)), precision));
 		}
-		String createTable = String.format(sql, tableName, String.join(",", cols));
 
-		String indexForIds = String.format("create or replace index ndx_padl_source_id on %s(padl_source_id)",
-				tableName);
+		String createTable = String.format(sql, tableName, colPadlId,
+				String.join(",", cols));
 
 		String indexForOriginalSourceKey = String.format("create or replace index ndx_%s on %s(%s)",
 				resultSetMetaData.getIdColumn(), tableName, resultSetMetaData.getIdColumn());
 
 		definitions.add(createTable);
-		definitions.add(indexForIds);
 		definitions.add(indexForOriginalSourceKey);
+
+		if (hasId) {
+			String indexForIds = String.format("create or replace index padl_ndx_%s on %s(padl_source_id)",
+					tableName, tableName);
+			definitions.add(indexForIds);
+		}
 
 		logger.debug("Returning create and index SQLs: {}", definitions.toArray());
 
@@ -583,23 +563,40 @@ public class DBSourceServiceProxyHelper {
 				String proxyTableName = tableData.getTableName();
 				String idColumn = tableData.getIdColumn();
 				String tempTableName = getTempTableName(proxyTableName);
-				List<String> fmtJoinAllCols = tableData.getColumns().stream()
-						.map(col -> String.format("proxytable.%s = temptable.%s", col, col))
-						.collect(Collectors.toList());
 
-				String allJoinCols = String.join(" and ", fmtJoinAllCols);
+				// List<String> fmtJoinAllCols = tableData.getColumns().stream()
+				// .map(col -> String.format("proxytable.%s = temptable.%s", col, col))
+				// .collect(Collectors.toList());
+
+				// String allJoinCols = String.join(" and ", fmtJoinAllCols);
+
 				String allCols = String.join(",", tableData.getColumns());
+
+				// String sqlDeleteDiff = String.format("""
+				// delete from %s where padl_source_id in (
+				// select proxytable.padl_source_id
+				// from %s as proxytable
+				// left join %s as temptable
+				// on
+				// %s
+				// where temptable.%s is null
+				// )
+				// """, proxyTableName, proxyTableName, tempTableName, allJoinCols, idColumn);
 
 				String sqlDeleteDiff = String.format("""
 						delete from %s where padl_source_id in (
 						select proxytable.padl_source_id
-						from %s as proxytable
-						left join %s as temptable
-						on
-							%s
-						where temptable.%s is null
+						from
+						   %s as proxytable
+						   inner join (
+						      select %s from %s
+							  except
+							  select %s from %s
+						   ) as temptable
+						   proxytable.%s = temptable.%s
 						)
-						""", proxyTableName, proxyTableName, tempTableName, allJoinCols, idColumn);
+						""", proxyTableName, proxyTableName, allCols, proxyTableName, allCols, tempTableName, idColumn,
+						idColumn);
 
 				logger.debug("Runing sync delete phase with: \n" + sqlDeleteDiff);
 				PreparedStatement psDelete = conn.prepareStatement(sqlDeleteDiff);
@@ -695,6 +692,113 @@ public class DBSourceServiceProxyHelper {
 			psInsertEntries.executeUpdate();
 			psInsertEntries.close();
 
+		} catch (SQLException e) {
+			e.printStackTrace();
+			logger.error(e);
+		}
+	}
+
+	public void createMetaData() {
+		logger.debug("Running cleaning database process with base name [basename='{}",
+				config.getDatabaseBaseName() + "%']");
+
+		String sqlCreateMetaSchema = "create database if not exists padl_meta";
+		String sqlCreateMetaTable = """
+				create table if not exists padl_meta.instances (instance_basename varchar(30), instance_dbname varchar(50),
+				 last_ping timestamp, status varchar(10), config_version varchar(100),
+				 primary key (instance_basename, instance_dbname))
+				 """;
+		try (Connection conn = adminBds.getConnection()) {
+			conn.prepareStatement(sqlCreateMetaSchema).executeQuery();
+			conn.prepareStatement(sqlCreateMetaTable).executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			logger.error(e);
+
+		}
+	}
+
+	public void cleanDatabases() {
+		logger.debug("Running cleaning database process with base name [basename='{}",
+				config.getDatabaseBaseName() + "%']");
+		String sqlGetExpiredInstancesDBNames = String.format(
+				"select instance_dbname from padl_meta.instances where instance_basename = ? and last_ping < now() - interval %d minute",
+				EXPIRATION_TIME_IN_MINUTES);
+
+		try (Connection conn = adminBds.getConnection()) {
+			PreparedStatement psExpired = conn.prepareStatement(sqlGetExpiredInstancesDBNames);
+			ResultSet rsExpired = psExpired.executeQuery();
+			while (rsExpired.next()) {
+				conn.prepareStatement("drop database if exists " + rsExpired.getString(1)).executeUpdate();
+			}
+
+			// old note to query information_schema "select schema_name from
+			// information_schema.schemata where schema_name = ?"
+			PreparedStatement psCreateSchemaIfNeeded = conn
+					.prepareStatement("create database if not exists " + config.getDatabaseFullName());
+			psCreateSchemaIfNeeded.executeUpdate();
+			psCreateSchemaIfNeeded.close();
+
+			pingMetaSchema(config.getDatabaseBaseName(), config.getDatabaseFullName());
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			logger.error(e);
+		}
+
+	}
+
+	private void pingMetaSchema(String databaseBaseName, String databaseFullName) {
+		String sqlUpdatePing = "update padl_meta.instances set last_ping = now() where instance_dbname = ?";
+		String sqlInsertPing = "insert into padl_meta.instances ( instance_basename, instance_dbname, last_ping, status, config_version) values (?,?,now(),?,?)";
+
+		try (Connection conn = adminBds.getConnection()) {
+			PreparedStatement psUpdatePing = conn.prepareStatement(sqlUpdatePing);
+			psUpdatePing.setString(1, databaseFullName);
+			if (psUpdatePing.executeUpdate() == 0) {
+				PreparedStatement psInsertPing = conn.prepareStatement(sqlInsertPing);
+				psInsertPing.setString(1, databaseBaseName);
+				psInsertPing.setString(2, databaseFullName);
+				psInsertPing.setString(3, MetaDbStatus.NEW.toString());
+				psInsertPing.setString(4, "");
+				psInsertPing.executeUpdate();
+				psInsertPing.close();
+			}
+			psUpdatePing.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			logger.error(e);
+		}
+	}
+
+	public MetaDbStatus getDbCurrentStatus(String databaseFullName) {
+		String sqlGetCurrentStatus = "select status from padl_meta.instances where instance_dbname = ?";
+		MetaDbStatus result = MetaDbStatus.NO_STATUS;
+		try (Connection conn = adminBds.getConnection()) {
+			PreparedStatement ps = conn.prepareStatement(sqlGetCurrentStatus);
+			ps.setString(1, databaseFullName);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				result = MetaDbStatus.valueOf(rs.getString(1));
+			}
+			rs.close();
+			ps.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			logger.error(e);
+		}
+		return result;
+	}
+
+	public void setDbCurrentStatus(String databaseFullName, MetaDbStatus configured) {
+		String sqlGetCurrentStatus = "update padl_meta.instances(status) set status = ? where instance_dbname = ?";
+		try (Connection conn = adminBds.getConnection()) {
+			PreparedStatement ps = conn.prepareStatement(sqlGetCurrentStatus);
+			ps.setString(1, configured.toString());
+			ps.setString(2, databaseFullName);
+			ps.executeUpdate();
+			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			logger.error(e);

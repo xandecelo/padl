@@ -49,12 +49,16 @@ public class DBSourceService extends PadlSourceService {
 		proxyHelper = new DBSourceServiceProxyHelper(params, config);
 		dataHelper = new DBSourceServiceDataHelper(config);
 
+		proxyHelper.createMetaData();
 		proxyHelper.cleanDatabases();
 		proxyHelper.createOpenldapTables();
 		proxyHelper.createDNSuffixTable();
 		proxyHelper.createTables(dataHelper.getTableDefinitions());
-		proxyHelper.loadOpenldapMappings();
-		proxyHelper.loadAttributes();
+		if (proxyHelper.getDbCurrentStatus(config.getDatabaseFullName()) == MetaDbStatus.NEW) {
+			proxyHelper.loadOpenldapMappings();
+			proxyHelper.loadAttributes();
+			proxyHelper.setDbCurrentStatus(config.getDatabaseFullName(), MetaDbStatus.RUNNING);
+		}
 
 	}
 
