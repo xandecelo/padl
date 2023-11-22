@@ -30,6 +30,7 @@ public class DBSourceService extends PadlSourceService {
 			proxyHelper.loadData(dataHelper, config.getBatchMode());
 			proxyHelper.mergeData();
 			proxyHelper.updateEntries();
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 			logger.error(e);
@@ -52,7 +53,7 @@ public class DBSourceService extends PadlSourceService {
 		proxyHelper.createMetaData();
 		proxyHelper.cleanDatabases();
 		proxyHelper.createOpenldapTables();
-		proxyHelper.createDNSuffixTable();
+		proxyHelper.createPadlSupportTables();
 		proxyHelper.createTables(dataHelper.getTableDefinitions());
 		if (proxyHelper.getDbCurrentStatus(config.getDatabaseFullName()) == MetaDbStatus.NEW) {
 			proxyHelper.loadOpenldapMappings();
