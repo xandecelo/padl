@@ -19,7 +19,7 @@ public class PadlConfig {
 	private String suffix;
 	private String adminPassword;
 	private List<PadlSourceConfiguration> sources = new LinkedList<PadlSourceConfiguration>();
-	private	boolean addDefaultMdbBack = true;
+	private boolean addDefaultMdbBack = true;
 
 	public String getInstanceId() {
 		return instanceId;
@@ -153,16 +153,16 @@ public class PadlConfig {
 	}
 
 	public String getLDIFForSuffixOrganization() {
-		return  addDefaultMdbBack ? String.format("""
-						# Default base organization
-						dn: %s
-						objectClass: top
-						objectClass: dcObject
-						objectClass: organization
-						o: %s
-						dc: %s
-
-				""", this.getSuffix(), this.getOrganizationName(), this.getSuffixDC()) : "";
+		return addDefaultMdbBack ? String.format("""
+			# Default base organization
+			dn: %s
+			objectClass: top
+			objectClass: dcObject
+			objectClass: organization
+			o: %s
+			dc: %s
+			
+			""", this.getSuffix(), this.getOrganizationName(), this.getSuffixDC()) : "";
 	}
 
 	private String getOrganizationName() {
