@@ -98,7 +98,7 @@ public class PadlInstance {
 				config.getAdminPassword())) {
 			var entry = conn.getEntry(config.getSuffix());
 			logger.debug("Look at was found: {}", entry);
-			result = entry != null;
+			result = entry == null;
 		} catch (LDAPException e) {
 			e.printStackTrace();
 		}
