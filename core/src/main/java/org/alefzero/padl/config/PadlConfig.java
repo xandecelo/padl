@@ -84,10 +84,11 @@ public class PadlConfig {
 			logger.trace("Processing source [{}, {}] to configuration LDIF", source.getId(), source.getType());
 			if (this.getSuffix().equalsIgnoreCase(source.getSuffix())) {
 				sb.append("\n").append(source.getConfigurationLDIF().trim());
-				sb.append("\nolcRootPW: ").append(this.getAdminPassword());
+				sb.append("olcRootPW: ").append(this.getAdminPassword());
 				addDefaultMdbBack = false;
 			} else {
-				sb.append(source.getConfigurationLDIF());
+				sb.append(source.getConfigurationLDIF().trim());
+				sb.append("\nolcSubordinate: true");
 			}
 			sb.append("\nolcAccess: to attrs=userPassword by self write by anonymous auth by * none");
 			sb.append("\nolcAccess: to attrs=shadowLastChange by self write by * read");

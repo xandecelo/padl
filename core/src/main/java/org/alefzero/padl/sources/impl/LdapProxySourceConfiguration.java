@@ -36,7 +36,6 @@ public class LdapProxySourceConfiguration extends PadlSourceConfiguration {
 		sb.append("\nobjectClass: olcDatabaseConfig");
 		sb.append("\nobjectClass: olcLDAPConfig");
 		sb.append("\nolcDatabase: ldap");
-		sb.append("\nolcSubordinate: true");
 		sb.append("\nolcRootDN: ").append(super.getRootDN());
 		sb.append("\nolcSuffix: ").append(super.getSuffix());
 		sb.append("\nolcDbURI: ").append(this.getTargetURI());
