@@ -154,7 +154,6 @@ public class PadlConfig {
 
 	public String getLDIFForSuffixOrganization() {
 		return addDefaultMdbBack ? String.format("""
-			# Default base organization
 			dn: %s
 			objectClass: top
 			objectClass: dcObject
@@ -166,7 +165,7 @@ public class PadlConfig {
 	}
 
 	private String getOrganizationName() {
-		return "Organization";
+		return this.getSuffixDC();
 	}
 
 	private String getSuffixDC() {
