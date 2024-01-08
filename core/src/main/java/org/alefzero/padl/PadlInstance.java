@@ -11,6 +11,10 @@ import org.alefzero.padl.sources.PadlSourceService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.LDAPConnection;
+import com.unboundid.ldap.sdk.LDAPException;
+
 public class PadlInstance {
 	protected static final Logger logger = LogManager.getLogger();
 
@@ -66,10 +70,36 @@ public class PadlInstance {
 	public void prepareSync() {
 		logger.debug("Preparing sync...");
 
+		if (this.instanceDontHaveOrganization()) {
+			this.createDefaultOrganization();
+		}
+
 		for (var sourceConfig : config.getSourcesInConfigurationOrder()) {
 			PadlSourceService source = manager.getSourceById(sourceConfig.getId());
 			source.prepare();
 		}
+	}
+
+	private void createDefaultOrganization() {
+		try (LDAPConnection conn = new LDAPConnection("localhost", 389, "cn=admin," + config.getSuffix(),
+				config.getAdminPassword())) {
+
+			Entry entry = new Entry(config.getLDIFForSuffixOrganization());
+			conn.add(entry);
+		} catch (LDAPException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private boolean instanceDontHaveOrganization() {
+		boolean result = true;
+		try (LDAPConnection conn = new LDAPConnection("localhost", 389, "cn=admin," + config.getSuffix(),
+				config.getAdminPassword())) {
+			result = conn.getEntry(config.getSuffix()) != null;
+		} catch (LDAPException e) {
+			e.printStackTrace();
+		}
+		return result;
 	}
 
 }

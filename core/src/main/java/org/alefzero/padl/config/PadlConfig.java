@@ -19,6 +19,7 @@ public class PadlConfig {
 	private String suffix;
 	private String adminPassword;
 	private List<PadlSourceConfiguration> sources = new LinkedList<PadlSourceConfiguration>();
+	private	boolean addDefaultMdbBack = true;
 
 	public String getInstanceId() {
 		return instanceId;
@@ -77,9 +78,6 @@ public class PadlConfig {
 		sb.append(getDeleteDefaultPassword());
 		sb.append("\n\n");
 
-
-		boolean addDefaultMdbBack = true;
-
 		for (PadlSourceConfiguration source : this.getSourcesInConfigurationOrder()) {
 			logger.trace("Processing source [{}, {}] to configuration LDIF", source.getId(), source.getType());
 			if (this.getSuffix().equalsIgnoreCase(source.getSuffix())) {
@@ -96,7 +94,7 @@ public class PadlConfig {
 
 			sb.append("\n\n");
 		}
-		
+
 		sb.append(getDeleteDefaultMdbLDIF());
 		sb.append("\n\n");
 
@@ -151,18 +149,20 @@ public class PadlConfig {
 				olcRootPW: %s
 				olcSuffix: %s
 
-				# Default base organization
-				dn: %s
-				objectClass: top
-				objectClass: dcObject
-				objectClass: organization
-				o: %s
-				dc: %s
-				
-				""", "cn=admin," + this.getSuffix(), this.getAdminPassword(), this.getSuffix(), 
-				this.getSuffix(),  this.getOrganizationName(), this.getSuffixDC()
-				);
+				""", "cn=admin," + this.getSuffix(), this.getAdminPassword(), this.getSuffix());
+	}
 
+	public String getLDIFForSuffixOrganization() {
+		return  addDefaultMdbBack ? String.format("""
+						# Default base organization
+						dn: %s
+						objectClass: top
+						objectClass: dcObject
+						objectClass: organization
+						o: %s
+						dc: %s
+
+				""", this.getSuffix(), this.getOrganizationName(), this.getSuffixDC()) : "";
 	}
 
 	private String getOrganizationName() {

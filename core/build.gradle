@@ -27,6 +27,9 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-core:2.14.2'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
 
+    // LDAP libraries
+    implementation 'com.unboundid:unboundid-ldapsdk:6.0.11'
+    
     // Unit test libraries
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
