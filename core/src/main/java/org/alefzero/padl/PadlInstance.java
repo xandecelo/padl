@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.LDAPResult;
 
 public class PadlInstance {
 	protected static final Logger logger = LogManager.getLogger();
@@ -85,7 +86,8 @@ public class PadlInstance {
 				config.getAdminPassword())) {
 			Entry entry = new Entry(config.getLDIFForSuffixOrganization());
 			logger.debug("Creating base entry for suffix {} with {}.", config.getSuffix(), entry);
-			conn.add(entry);
+			LDAPResult result = conn.add(entry);
+			logger.debug("Operation result: {} ", result);
 		} catch (LDAPException e) {
 			e.printStackTrace();
 		}
