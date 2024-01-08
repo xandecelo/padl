@@ -158,6 +158,7 @@ public class PadlConfig {
 				objectClass: organization
 				o: %s
 				dc: %s
+				
 				""", "cn=admin," + this.getSuffix(), this.getAdminPassword(), this.getSuffix(), 
 				this.getSuffix(),  this.getOrganizationName(), this.getSuffixDC()
 				);
