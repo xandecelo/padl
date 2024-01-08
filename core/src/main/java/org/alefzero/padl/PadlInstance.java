@@ -89,7 +89,7 @@ public class PadlInstance {
 			LDAPResult result = conn.add(entry);
 			logger.debug("Operation result: {} ", result);
 		} catch (LDAPException e) {
-			e.printStackTrace();
+			logger.error(e);
 		}
 	}
 
@@ -102,7 +102,7 @@ public class PadlInstance {
 			logger.debug("Look at was found: {}", entry);
 			result = entry == null;
 		} catch (LDAPException e) {
-			e.printStackTrace();
+			logger.error(e);
 		}
 		return result;
 	}
