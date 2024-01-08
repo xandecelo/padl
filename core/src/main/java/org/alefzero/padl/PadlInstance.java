@@ -83,8 +83,8 @@ public class PadlInstance {
 	private void createDefaultOrganization() {
 		try (LDAPConnection conn = new LDAPConnection("localhost", 389, "cn=admin," + config.getSuffix(),
 				config.getAdminPassword())) {
-
 			Entry entry = new Entry(config.getLDIFForSuffixOrganization());
+			logger.debug("Creating base entry for suffix {} with {}.", config.getSuffix(), entry);
 			conn.add(entry);
 		} catch (LDAPException e) {
 			e.printStackTrace();
@@ -93,9 +93,12 @@ public class PadlInstance {
 
 	private boolean instanceDontHaveOrganization() {
 		boolean result = true;
+		logger.debug("Looking for a configured organization for suffix {}.", config.getSuffix());
 		try (LDAPConnection conn = new LDAPConnection("localhost", 389, "cn=admin," + config.getSuffix(),
 				config.getAdminPassword())) {
-			result = conn.getEntry(config.getSuffix()) != null;
+			var entry = conn.getEntry(config.getSuffix());
+			logger.debug("Look at was found: {}", entry);
+			result = entry != null;
 		} catch (LDAPException e) {
 			e.printStackTrace();
 		}
