@@ -135,7 +135,7 @@ public class PadlConfig {
 				dn: olcDatabase=mdb,cn=config
 				objectClass: olcDatabaseConfig
 				objectClass: olcMdbConfig
-				olcDatabase: {1}mdb
+				olcDatabase: mdb
 				olcDbDirectory: /etc/ldap/slapd.d
 				olcAccess: {0}to attrs=userPassword by self write by anonymous auth by * none
 				olcAccess: {1}to attrs=shadowLastChange by self write by * read
@@ -150,8 +150,26 @@ public class PadlConfig {
 				olcRootDN: %s
 				olcRootPW: %s
 				olcSuffix: %s
-				""", "cn=admin," + this.getSuffix(), this.getAdminPassword(), this.getSuffix());
 
+				# Default base organization
+				dn: %s
+				objectClass: top
+				objectClass: dcObject
+				objectClass: organization
+				o: %s
+				dc: %s
+				""", "cn=admin," + this.getSuffix(), this.getAdminPassword(), this.getSuffix(), 
+				this.getSuffix(),  this.getOrganizationName(), this.getSuffixDC()
+				);
+
+	}
+
+	private String getOrganizationName() {
+		return "Organization";
+	}
+
+	private String getSuffixDC() {
+		return this.getSuffix().substring(this.getSuffix().indexOf('=') + 1, this.getSuffix().indexOf(","));
 	}
 
 	private String getDeleteDefaultMdbLDIF() {
