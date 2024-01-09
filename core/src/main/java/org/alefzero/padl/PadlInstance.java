@@ -107,4 +107,8 @@ public class PadlInstance {
 		return result;
 	}
 
+	public int getUpdateDelayInSecs() {
+		return config.getUpdateDelayInSecs();
+	}
+
 }

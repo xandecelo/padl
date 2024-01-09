@@ -20,6 +20,7 @@ public class PadlConfig {
 	private String adminPassword;
 	private List<PadlSourceConfiguration> sources = new LinkedList<PadlSourceConfiguration>();
 	private boolean addDefaultMdbBack = true;
+	private int updateDelayInSecs = 120;
 
 	public String getInstanceId() {
 		return instanceId;
@@ -205,6 +206,14 @@ public class PadlConfig {
 			}
 		}
 		return sb.toString();
+	}
+
+    public int getUpdateDelayInSecs() {
+        return updateDelayInSecs;
+    }
+
+	public void setUpdateDelayInSecs(int updateDelayInSecs) {
+		this.updateDelayInSecs = updateDelayInSecs;
 	}
 
 }

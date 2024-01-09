@@ -18,6 +18,7 @@ public class App {
 
 	private static final String DEFAULT_ACTION = "help";
 	private static final String DEFAULT_CONFIGURATION_FILENAME = System.getenv("$APP_DIR") + "./conf/padl.yaml";
+
 	private ScheduledFuture<?> executor = null;
 
 	public static void main(String[] args) {
@@ -129,7 +130,7 @@ public class App {
 				} catch (Exception | Error e) {
 					logger.error("Sync error: {}", e.getCause(), e);
 				}
-			}, 0, 20, TimeUnit.SECONDS);
+			}, 0, instance.getUpdateDelayInSecs(), TimeUnit.SECONDS);
 
 			while (true) {
 				System.out.print("Press q and [Enter] to quit.");
