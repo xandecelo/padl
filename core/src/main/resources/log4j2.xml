@@ -25,6 +25,5 @@
 		<Logger name="org.alefzero" level="TRACE" additivity="false">
 			<AppenderRef ref="fileLogger" />
 		</Logger>
-		Ï
 	</Loggers>
 </Configuration>
