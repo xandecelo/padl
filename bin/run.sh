@@ -100,6 +100,12 @@ configure_user_ldifs() {
     done
 }
 
+
+check_base_org() {
+    echo "Check if base organization is configured."
+    $app "$conf" check_base_org
+}
+
 start_ldap() {
     nohup /usr/sbin/slapd -h "ldap:/// ldapi:///" -g openldap -u openldap -F /etc/ldap/slapd.d -d 7 >> /opt/app/logs/ldap.log 2>&1 &
 }
@@ -126,6 +132,7 @@ ldap_apply_dyngroup
 ldap_prepare_resources
 configure_user_ldifs
 ldap_setup
+check_base_org
 
 stop_ldap
 start_ldap

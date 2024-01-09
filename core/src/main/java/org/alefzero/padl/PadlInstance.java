@@ -70,11 +70,6 @@ public class PadlInstance {
 
 	public void prepareSync() {
 		logger.debug("Preparing sync...");
-
-		if (this.instanceDontHaveOrganization()) {
-			this.createDefaultOrganization();
-		}
-
 		for (var sourceConfig : config.getSourcesInConfigurationOrder()) {
 			PadlSourceService source = manager.getSourceById(sourceConfig.getId());
 			source.prepare();
@@ -109,6 +104,12 @@ public class PadlInstance {
 
 	public int getUpdateDelayInSecs() {
 		return config.getUpdateDelayInSecs();
+	}
+
+	public void checkBaseOrg() {
+		if (this.instanceDontHaveOrganization()) {
+			this.createDefaultOrganization();
+		}
 	}
 
 }

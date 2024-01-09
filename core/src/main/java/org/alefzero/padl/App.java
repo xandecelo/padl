@@ -62,6 +62,9 @@ public class App {
 				case "prepare":
 					runSyncOnce(instance);
 					break;
+				case "check_base_org":
+					checkBaseOrg(instance);
+					break;
 				case "help":
 				default:
 					this.help();
@@ -73,6 +76,10 @@ public class App {
 			e.printStackTrace();
 			System.exit(1);
 		}
+	}
+
+	private void checkBaseOrg(PadlInstance instance) {
+		instance.checkBaseOrg();
 	}
 
 	public static String getConfigurationFilename(String[] args) {
