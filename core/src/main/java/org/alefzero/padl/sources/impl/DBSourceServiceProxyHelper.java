@@ -135,8 +135,8 @@ public class DBSourceServiceProxyHelper {
 		String createTable = String.format(sql, tableName, colPadlId,
 				String.join(",", cols));
 
-		String indexForOriginalSourceKey = String.format("create or replace index ndx_%s on %s(%s)",
-				resultSetMetaData.getIdColumn(), tableName, resultSetMetaData.getIdColumn());
+		String indexForOriginalSourceKey = String.format("create or replace index ndx_%s_%s on %s(%s)",
+				tableName, resultSetMetaData.getIdColumn(), tableName, resultSetMetaData.getIdColumn());
 
 		definitions.add(createTable);
 		definitions.add(indexForOriginalSourceKey);
@@ -813,16 +813,17 @@ public class DBSourceServiceProxyHelper {
 
 	public void createAuxiliaryIndexes(DBSourceConfiguration config) {
 		List<String> sqlIndexes = new LinkedList<String>();
+		int indexCount = 1;
 		if (config.getIndexCols().size() > 0) {
 			String indexCols = String.join(", ", config.getIndexCols());
-			sqlIndexes.add(String.format("create index ndx_%s on %s (%s)", config.getMetaTableName(),
+			sqlIndexes.add(String.format("create or replace index ndx_aux_%s_%s on %s (%s)", config.getMetaTableName(), indexCount,
 					config.getMetaTableName(), indexCols));
 		}
 
 		for (JoinData joindata : config.getJoinData()) {
 			if (joindata.getIndexCols().size() > 0) {
 				String indexCols = String.join(", ", joindata.getIndexCols());
-				sqlIndexes.add(String.format("create index ndx_%s on %s (%s)", joindata.getMetaTableName(),
+				sqlIndexes.add(String.format("create or replace index ndx_aux_%s_%s on %s (%s)", joindata.getMetaTableName(), indexCount,
 						joindata.getMetaTableName(), indexCols));
 			}
 		}
