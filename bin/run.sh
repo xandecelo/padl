@@ -100,6 +100,14 @@ configure_user_ldifs() {
     done
 }
 
+start_ldap() {
+    nohup /usr/sbin/slapd -h "ldap:/// ldapi:///" -g openldap -u openldap -F /etc/ldap/slapd.d -d 7 >> /opt/app/logs/ldap.log 2>&1 &
+}
+
+stop_ldap() {
+    killall slapd
+}
+
 check_yaml
 tail -n 10 -F logs/padl.log &
 get_os_variables
@@ -111,15 +119,17 @@ echo; echo; echo
 service mariadb start
 mariadb -uroot < bin/init.sql
 
-
-#service slapd start
-nohup /usr/sbin/slapd -h "ldap:/// ldapi:///" -g openldap -u openldap -F /etc/ldap/slapd.d -d 7 > /opt/app/logs/ldap.log 2>&1 &
+start_ldap
 
 test_connectivity
 ldap_apply_dyngroup
 ldap_prepare_resources
 configure_user_ldifs
 ldap_setup
+
+stop_ldap
+start_ldap
+
 ldap_start_sync
 
 #echo "PADL LDAP is running. Press [q] and Enter to to quit."
