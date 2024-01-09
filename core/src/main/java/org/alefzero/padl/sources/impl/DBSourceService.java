@@ -60,6 +60,7 @@ public class DBSourceService extends PadlSourceService {
 			proxyHelper.loadAttributes();
 			proxyHelper.setDbCurrentStatus(config.getDatabaseFullName(), MetaDbStatus.RUNNING);
 		}
+		proxyHelper.createAuxiliaryIndexes(config);
 
 	}
 

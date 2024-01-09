@@ -32,6 +32,7 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 	private List<String> objectClasses;
 	private Integer dbBatchSize = 100;
 	private Boolean testLoadMode = false;
+	private List<String> indexCols = new LinkedList<String>();
 
 	private Map<String, String> ldaptodb = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 	private Map<String, String> dbtoldap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
@@ -159,6 +160,8 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		private String joinColumns;
 		private String[] attributes;
 		private String idColumn;
+		private List<String> indexCols = new LinkedList<String>();
+
 		private Map<String, String> ldaptodb = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 		private Map<String, String> dbtoldap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 
@@ -255,6 +258,14 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 			this.idColumn = idColumn;
 		}
 
+		public List<String> getIndexCols() {
+			return indexCols;
+		}
+
+		public void setIndexCols(List<String> indexCols) {
+			this.indexCols = indexCols;
+		}
+
 	}
 
 	public Boolean getTestLoadMode() {
@@ -265,13 +276,20 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		this.testLoadMode = testLoadMode;
 	}
 
-
 	public Integer getDbBatchSize() {
 		return dbBatchSize;
 	}
 
 	public void setDbBatchSize(Integer dbBatchSize) {
 		this.dbBatchSize = dbBatchSize;
+	}
+
+	public List<String> getIndexCols() {
+		return indexCols;
+	}
+
+	public void setIndexCols(List<String> indexCols) {
+		this.indexCols = indexCols;
 	}
 
 	@Override

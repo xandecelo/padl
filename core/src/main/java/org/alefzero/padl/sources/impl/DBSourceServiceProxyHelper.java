@@ -811,4 +811,24 @@ public class DBSourceServiceProxyHelper {
 		}
 	}
 
+	public void createAuxiliaryIndexes(DBSourceConfiguration config) {
+		List<String> sqlIndexes = new LinkedList<String>();
+		if (config.getIndexCols().size() > 0) {
+			String indexCols = String.join(", ", config.getIndexCols());
+			sqlIndexes.add(String.format("create index ndx_%s on %s (%s)", config.getMetaTableName(),
+					config.getMetaTableName(), indexCols));
+		}
+
+		for (JoinData joindata : config.getJoinData()) {
+			if (joindata.getIndexCols().size() > 0) {
+				String indexCols = String.join(", ", joindata.getIndexCols());
+				sqlIndexes.add(String.format("create index ndx_%s on %s (%s)", joindata.getMetaTableName(),
+						joindata.getMetaTableName(), indexCols));
+			}
+		}
+
+		sqlIndexes.forEach(sql -> this.sqlUpdate(sql));
+		
+	}
+
 }
