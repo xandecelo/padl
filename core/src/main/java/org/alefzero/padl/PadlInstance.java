@@ -84,11 +84,11 @@ public class PadlInstance {
 	private void createDefaultOrganization() {
 		try (LDAPConnection conn = new LDAPConnection("localhost", 389, "cn=admin," + config.getSuffix(),
 				config.getAdminPassword())) {
-			Entry entry = new Entry(config.getLDIFForSuffixOrganization());
+			Entry entry = new Entry(config.getLDIFForSuffixOrganization().split("\n"));
 			logger.debug("Creating base entry for suffix {} with {}.", config.getSuffix(), entry);
 			LDAPResult result = conn.add(entry);
 			logger.debug("Operation result: {} ", result);
-		} catch (LDAPException e) {
+		} catch (Exception e) {
 			logger.error(e);
 		}
 	}
