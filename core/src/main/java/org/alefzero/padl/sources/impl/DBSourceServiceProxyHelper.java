@@ -237,7 +237,7 @@ public class DBSourceServiceProxyHelper {
 		// """);
 
 		this.sqlUpdate(String.format("""
-					create view ldap_entry_objclasses as select a.id as entry_id, b.classname as oc_name
+					create view if not exists ldap_entry_objclasses as select a.id as entry_id, b.classname as oc_name
 					from ldap_entries a, extra_classes b where a.oc_map_id = %d;
 				""", PROXY_OBJECT_CLASS_ID));
 
