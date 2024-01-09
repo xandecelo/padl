@@ -52,8 +52,8 @@ public class DBSourceService extends PadlSourceService {
 
 		proxyHelper.createMetaData();
 		proxyHelper.cleanDatabases();
-		proxyHelper.createOpenldapTables();
 		proxyHelper.createPadlSupportTables();
+		proxyHelper.createOpenldapTables();
 		proxyHelper.createTables(dataHelper.getTableDefinitions());
 		if (proxyHelper.getDbCurrentStatus(config.getDatabaseFullName()) == MetaDbStatus.NEW) {
 			proxyHelper.loadOpenldapMappings();
