@@ -4,7 +4,8 @@ general:
   instanceId: instance1
   suffix: dc=example,dc=com
   adminPassword: admin
-
+  updateDelayInSecs: 300
+  
 sourceParameters:
 - type: sql
   dbUsername: "dbuser"
@@ -51,6 +52,8 @@ sources:
     joinColumns: uid=uid
     attributes:
     - memberOf=groupname
+    indexCols:
+    - groupname
     # Column from projection used to identify the match with parent source
     idColumn: uid
     
