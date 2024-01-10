@@ -87,6 +87,7 @@ public class PadlConfig {
 				addDefaultMdbBack = false;
 			} else {
 				sb.append(source.getConfigurationLDIF().trim());
+				// TODO: subordinate must check if is under the tree
 				sb.append("\nolcSubordinate: true");
 			}
 			sb.append("\nolcAccess: to attrs=userPassword by self write by anonymous auth by * none");
