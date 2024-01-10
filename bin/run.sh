@@ -103,7 +103,7 @@ configure_user_ldifs() {
 
 check_base_org() {
     echo "Check if base organization is configured."
-    $app "$conf" check_base_org
+    $app "$conf" check-base-org
 }
 
 start_ldap() {

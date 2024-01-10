@@ -62,7 +62,7 @@ public class App {
 				case "prepare":
 					runSyncOnce(instance);
 					break;
-				case "check_base_org":
+				case "check-base-org":
 					checkBaseOrg(instance);
 					break;
 				case "help":
