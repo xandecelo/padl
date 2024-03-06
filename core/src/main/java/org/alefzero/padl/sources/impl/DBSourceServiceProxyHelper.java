@@ -721,7 +721,7 @@ public class DBSourceServiceProxyHelper {
 				 last_ping timestamp, status varchar(10), config_version varchar(100),
 				 primary key (instance_basename, instance_dbname))
 				 """;
-		String sqlGrantLoadCSV = String.format(" grant file on *.* to '%s'@'%'", params.getDbUsername());
+		String sqlGrantLoadCSV = String.format("grant file on *.* to '%s'@'%%'", params.getDbUsername());
 		try (Connection conn = adminBds.getConnection()) {
 			conn.prepareStatement(sqlCreateMetaSchema).executeQuery();
 			conn.prepareStatement(sqlCreateMetaTable).executeQuery();
@@ -904,24 +904,8 @@ public class DBSourceServiceProxyHelper {
 
 	public static void main(String[] args) throws Exception {
 
-		Path file = Files.createTempFile("table", ".tmp");
-		CsvWriter writer = CsvWriter.builder()
-				.quoteStrategy(QuoteStrategies.ALWAYS)
-				.quoteCharacter('"')
-				.build(file, StandardCharsets.ISO_8859_1);
-		List<String> cols = List.of("a", "b", "c");
-		writer.writeRecord(cols);
-		for (int i = 0; i < 4; i++) {
-			int k = 0;
-			List<String> data = new LinkedList<String>();
-			for (String col : cols) {
-				data.add(col + i + "." + k++);
-			}
-			writer.writeRecord(data);
-		}
-		writer.close();
-		Files.readAllLines(file).forEach(line -> System.out.println(line));
-		file.toFile().delete();
+		String sqlGrantLoadCSV = String.format("grant file on *.* to '%s'@'%%'", "user");
+		System.out.println(sqlGrantLoadCSV);
 	}
 
 }
