@@ -36,6 +36,7 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 
 	private Map<String, String> ldaptodb = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 	private Map<String, String> dbtoldap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+	private String loadMode = "default";
 
 	public String getSourceJdbcURL() {
 		return sourceJdbcURL;
@@ -151,6 +152,8 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		return this.objectClasses.get(0);
 	}
 
+
+	
 	public static class JoinData {
 
 		private String outerId = "";
@@ -246,8 +249,8 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		@Override
 		public String toString() {
 			return "JoinData [outerId=" + outerId + ", id=" + id + ", query=" + query + ", joinColumns=" + joinColumns
-					+ ", attributes=" + Arrays.toString(attributes) + ", ldaptodb=" + ldaptodb + ", dbtoldap="
-					+ dbtoldap + "]";
+					+ ", attributes=" + Arrays.toString(attributes) + ", idColumn=" + idColumn + ", indexCols="
+					+ indexCols + ", ldaptodb=" + ldaptodb + ", dbtoldap=" + dbtoldap + "]";
 		}
 
 		public String getIdColumn() {
@@ -387,6 +390,14 @@ public class DBSourceConfiguration extends PadlSourceConfiguration {
 		List<String> list = new LinkedList<String>(getObjectClasses());
 		list.remove(0);
 		return list;
+	}
+
+	public String getLoadMode() {
+		return loadMode;
+	}
+
+	public void setLoadMode(String loadMode) {
+		this.loadMode = loadMode;
 	}
 
 }

@@ -1,5 +1,9 @@
 package org.alefzero.padl.sources.impl;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,12 +13,16 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.alefzero.padl.exceptions.PadlUnrecoverableError;
 import org.alefzero.padl.sources.impl.DBSourceConfiguration.JoinData;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import de.siegmar.fastcsv.writer.CsvWriter;
+import de.siegmar.fastcsv.writer.QuoteStrategies;
 
 public class DBSourceServiceProxyHelper {
 	protected static final Logger logger = LogManager.getLogger();
@@ -713,13 +721,14 @@ public class DBSourceServiceProxyHelper {
 				 last_ping timestamp, status varchar(10), config_version varchar(100),
 				 primary key (instance_basename, instance_dbname))
 				 """;
+		String sqlGrantLoadCSV = String.format(" grant file on *.* to '%s'@'%'", params.getDbUsername());
 		try (Connection conn = adminBds.getConnection()) {
 			conn.prepareStatement(sqlCreateMetaSchema).executeQuery();
 			conn.prepareStatement(sqlCreateMetaTable).executeQuery();
+			conn.prepareStatement(sqlGrantLoadCSV).executeQuery();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			logger.error(e);
-
 		}
 	}
 
@@ -816,20 +825,103 @@ public class DBSourceServiceProxyHelper {
 		int indexCount = 1;
 		if (config.getIndexCols().size() > 0) {
 			String indexCols = String.join(", ", config.getIndexCols());
-			sqlIndexes.add(String.format("create or replace index ndx_aux_%s_%s on %s (%s)", config.getMetaTableName(), indexCount,
+			sqlIndexes.add(String.format("create or replace index ndx_aux_%s_%s on %s (%s)", config.getMetaTableName(),
+					indexCount,
 					config.getMetaTableName(), indexCols));
 		}
 
 		for (JoinData joindata : config.getJoinData()) {
 			if (joindata.getIndexCols().size() > 0) {
 				String indexCols = String.join(", ", joindata.getIndexCols());
-				sqlIndexes.add(String.format("create or replace index ndx_aux_%s_%s on %s (%s)", joindata.getMetaTableName(), indexCount,
+				sqlIndexes.add(String.format("create or replace index ndx_aux_%s_%s on %s (%s)",
+						joindata.getMetaTableName(), indexCount,
 						joindata.getMetaTableName(), indexCols));
 			}
 		}
 
 		sqlIndexes.forEach(sql -> this.sqlUpdate(sql));
-		
+
+	}
+
+	public void loadDataInline(DBSourceServiceDataHelper helper) throws SQLException {
+		logger.debug("Loading data from source database using inline mode.");
+		for (TableDataHelper item : getTableDataHelper()) {
+			// get all data in a file in csv format
+			ResultSet sourceRs = helper.getDataFor(item.getQuery());
+			try (Connection connFromDataSource = sourceRs.getStatement().getConnection()) {
+				Path file = exportToCSV(sourceRs, item);
+				importFromCSV(file, item);
+			} catch (SQLException | IOException e) {
+				e.printStackTrace();
+				logger.error("Error processing data from table {}: {}", item.getTableName(), e.getLocalizedMessage());
+			}
+		}
+	}
+
+	private Path exportToCSV(ResultSet sourceRs, TableDataHelper item) throws SQLException, IOException {
+		Path file = Files.createTempFile(item.getTableName(), ".tmp");
+		CsvWriter writer = CsvWriter.builder()
+				.quoteStrategy(QuoteStrategies.ALWAYS)
+				.quoteCharacter('"')
+				.build(file, StandardCharsets.ISO_8859_1);
+		List<String> cols = item.getColumns();
+		writer.writeRecord(cols);
+		while (sourceRs.next()) {
+			List<String> data = new LinkedList<String>();
+			for (String col : cols) {
+				data.add(sourceRs.getString(col));
+			}
+			writer.writeRecord(data);
+		}
+		writer.close();
+		return file;
+	}
+
+	private void importFromCSV(Path file, TableDataHelper item) throws SQLException {
+		List<String> metaCols = item.getColumns().stream()
+				.map(colName -> "@" + colName)
+				.collect(Collectors.toList());
+		List<String> dataCols = item.getColumns().stream()
+				.map(colName -> colName + " = @" + colName)
+				.collect(Collectors.toList());
+
+		String sqlLoadData = String.format("""
+				load data infile %s into table %s
+				character set %s
+				fields terminated by ';' enclosed by '\"' ignore 1 lines
+				(%s) set %s""", file.toAbsolutePath().toString(), getTempTableName(item.getTableName()),
+				StandardCharsets.UTF_8.toString(), String.join(", ", metaCols), String.join(", ", dataCols));
+		try (Connection conn = bds.getConnection()) {
+			PreparedStatement ps = conn.prepareStatement(sqlLoadData);
+			ps.executeQuery();
+		} catch (SQLException e) {
+			logger.error("Error loading into temporary table data:", e);
+			logger.error("tempFile: {}, sqlLoadData: {} ", sqlLoadData);
+			throw e;
+		}
+		file.toFile().delete();
+	}
+
+	public static void main(String[] args) throws Exception {
+
+		Path file = Files.createTempFile("table", ".tmp");
+		CsvWriter writer = CsvWriter.builder()
+				.quoteStrategy(QuoteStrategies.ALWAYS)
+				.quoteCharacter('"')
+				.build(file, StandardCharsets.ISO_8859_1);
+		List<String> cols = List.of("a", "b", "c");
+		writer.writeRecord(cols);
+		for (int i = 0; i < 4; i++) {
+			int k = 0;
+			List<String> data = new LinkedList<String>();
+			for (String col : cols) {
+				data.add(col + i + "." + k++);
+			}
+			writer.writeRecord(data);
+		}
+		writer.close();
+		Files.readAllLines(file).forEach(line -> System.out.println(line));
+		file.toFile().delete();
 	}
 
 }

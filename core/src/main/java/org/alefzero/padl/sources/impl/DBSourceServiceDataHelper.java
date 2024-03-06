@@ -95,9 +95,12 @@ public class DBSourceServiceDataHelper {
 	}
 
 	public void closeResources(ResultSet rs) throws SQLException {
-		Connection conn = rs.getStatement().getConnection();
-		rs.close();
-		conn.close();
+		if(null != rs) {
+			Connection conn = rs.getStatement().getConnection();
+			rs.close();
+			if (null != conn) {
+				conn.close();
+			}
+		}
 	}
-
 }

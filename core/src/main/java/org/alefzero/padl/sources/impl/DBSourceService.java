@@ -25,15 +25,30 @@ public class DBSourceService extends PadlSourceService {
 	@Override
 	public void sync() {
 		logger.trace(".sync()");
-		try {
-			proxyHelper.cleanTempTables();
-			proxyHelper.loadData(dataHelper, config.getBatchMode());
-			proxyHelper.mergeData();
-			proxyHelper.updateEntries();
-			
-		} catch (SQLException e) {
-			e.printStackTrace();
-			logger.error(e);
+		if ("inline".equalsIgnoreCase(config.getLoadMode())) {
+			try {
+				proxyHelper.cleanTempTables();
+				proxyHelper.loadDataInline(dataHelper);
+				proxyHelper.mergeData();
+				proxyHelper.updateEntries();
+				
+			} catch (SQLException e) {
+				e.printStackTrace();
+				logger.error(e);
+			}	
+
+		} else {
+			// loadMode defaults to... "default" (surprise!)
+			try {
+				proxyHelper.cleanTempTables();
+				proxyHelper.loadData(dataHelper, config.getBatchMode());
+				proxyHelper.mergeData();
+				proxyHelper.updateEntries();
+				
+			} catch (SQLException e) {
+				e.printStackTrace();
+				logger.error(e);
+			}	
 		}
 		logger.trace(".sync() endend.");
 	}
