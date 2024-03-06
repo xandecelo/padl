@@ -68,7 +68,7 @@ public class DBSourceServiceProxyHelper {
 
 		if (bds == null) {
 			bds = new BasicDataSource();
-			bds.setUrl(String.format("jdbc:mariadb://%s:%d/%s", params.getDbServer(), params.getDbPort(),
+			bds.setUrl(String.format("jdbc:mariadb://%s:%d/%s?useBulkStmts=true", params.getDbServer(), params.getDbPort(),
 					config.getDatabaseFullName()));
 			bds.setUsername(params.getDbUsername());
 			bds.setPassword(params.getDbPassword());
