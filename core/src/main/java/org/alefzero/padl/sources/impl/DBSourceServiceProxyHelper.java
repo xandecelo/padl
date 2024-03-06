@@ -58,7 +58,7 @@ public class DBSourceServiceProxyHelper {
 		if (adminBds == null) {
 			adminBds = new BasicDataSource();
 			adminBds.setUrl(String.format("jdbc:mariadb://%s:%d/%s", params.getDbServer(), params.getDbPort(),
-					"PosixFilePermissions"));
+					"information_schema"));
 			adminBds.setUsername(this.params.getDbUsername());
 			adminBds.setPassword(this.params.getDbPassword());
 			adminBds.setMaxTotal(2);
