@@ -861,7 +861,6 @@ public class DBSourceServiceProxyHelper {
 		Path file = Files.createTempFile(item.getTableName(), ".tmp",
 				PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--")));
 		CsvWriter writer = CsvWriter.builder()
-				.quoteStrategy(QuoteStrategies.ALWAYS)
 				.fieldSeparator('|')
 				.build(file, StandardCharsets.UTF_8);
 		List<String> cols = item.getColumns();
