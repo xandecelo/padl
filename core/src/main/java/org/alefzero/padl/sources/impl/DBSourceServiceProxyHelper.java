@@ -58,7 +58,7 @@ public class DBSourceServiceProxyHelper {
 		if (adminBds == null) {
 			adminBds = new BasicDataSource();
 			adminBds.setUrl(String.format("jdbc:mariadb://%s:%d/%s", params.getDbServer(), params.getDbPort(),
-					"information_schema"));
+					"PosixFilePermissions"));
 			adminBds.setUsername(this.params.getDbUsername());
 			adminBds.setPassword(this.params.getDbPassword());
 			adminBds.setMaxTotal(2);
@@ -890,7 +890,7 @@ public class DBSourceServiceProxyHelper {
 				.collect(Collectors.toList());
 
 		String sqlLoadData = String.format("""
-				load data infile %s into table %s
+				load data infile '%s' into table %s
 				fields terminated by ';' enclosed by '\"' ignore 1 lines
 				(%s) set %s""", file.toAbsolutePath().toString(), getTempTableName(item.getTableName()),
 				String.join(", ", metaCols), String.join(", ", dataCols));
