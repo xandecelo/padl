@@ -25,10 +25,10 @@ public class DBSourceService extends PadlSourceService {
 	@Override
 	public void sync() {
 		logger.trace(".sync()");
-		if ("inline".equalsIgnoreCase(config.getLoadMode())) {
+		if ("infile".equalsIgnoreCase(config.getLoadMode())) {
 			try {
 				proxyHelper.cleanTempTables();
-				proxyHelper.loadDataInline(dataHelper);
+				proxyHelper.loadDataInfile(dataHelper);
 				proxyHelper.mergeData();
 				proxyHelper.updateEntries();
 				

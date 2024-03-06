@@ -845,8 +845,8 @@ public class DBSourceServiceProxyHelper {
 
 	}
 
-	public void loadDataInline(DBSourceServiceDataHelper helper) throws SQLException {
-		logger.debug("Loading data from source database using inline mode.");
+	public void loadDataInfile(DBSourceServiceDataHelper helper) throws SQLException {
+		logger.debug("Loading data from source database using infile mode.");
 		for (TableDataHelper item : getTableDataHelper()) {
 			// get all data in a file in csv format
 			ResultSet sourceRs = helper.getDataFor(item.getQuery());
@@ -902,8 +902,9 @@ public class DBSourceServiceProxyHelper {
 			logger.error("tempFile: {}, sqlLoadData: {} ", sqlLoadData);
 			throw e;
 		} finally {
-			file.toFile().delete();
+			// TODO dont delete file when exception
 		}
+		file.toFile().delete();
 	}
 
 	public static void main(String[] args) throws Exception {
