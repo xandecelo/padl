@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -725,6 +726,7 @@ public class DBSourceServiceProxyHelper {
 		try (Connection conn = adminBds.getConnection()) {
 			conn.prepareStatement(sqlCreateMetaSchema).executeQuery();
 			conn.prepareStatement(sqlCreateMetaTable).executeQuery();
+			logger.debug("Granting infile privileges: {}", sqlGrantLoadCSV);
 			conn.prepareStatement(sqlGrantLoadCSV).executeQuery();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -859,11 +861,13 @@ public class DBSourceServiceProxyHelper {
 	}
 
 	private Path exportToCSV(ResultSet sourceRs, TableDataHelper item) throws SQLException, IOException {
-		Path file = Files.createTempFile(item.getTableName(), ".tmp");
+		Path file = Files.createTempFile(item.getTableName(), ".tmp",
+				PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--")));
 		CsvWriter writer = CsvWriter.builder()
 				.quoteStrategy(QuoteStrategies.ALWAYS)
 				.quoteCharacter('"')
-				.build(file, StandardCharsets.ISO_8859_1);
+				.fieldSeparator(';')
+				.build(file, StandardCharsets.UTF_8);
 		List<String> cols = item.getColumns();
 		writer.writeRecord(cols);
 		while (sourceRs.next()) {
@@ -887,10 +891,9 @@ public class DBSourceServiceProxyHelper {
 
 		String sqlLoadData = String.format("""
 				load data infile %s into table %s
-				character set %s
 				fields terminated by ';' enclosed by '\"' ignore 1 lines
 				(%s) set %s""", file.toAbsolutePath().toString(), getTempTableName(item.getTableName()),
-				StandardCharsets.UTF_8.toString(), String.join(", ", metaCols), String.join(", ", dataCols));
+				String.join(", ", metaCols), String.join(", ", dataCols));
 		try (Connection conn = bds.getConnection()) {
 			PreparedStatement ps = conn.prepareStatement(sqlLoadData);
 			ps.executeQuery();
@@ -898,12 +901,12 @@ public class DBSourceServiceProxyHelper {
 			logger.error("Error loading into temporary table data:", e);
 			logger.error("tempFile: {}, sqlLoadData: {} ", sqlLoadData);
 			throw e;
+		} finally {
+			file.toFile().delete();
 		}
-		file.toFile().delete();
 	}
 
 	public static void main(String[] args) throws Exception {
-
 		String sqlGrantLoadCSV = String.format("grant file on *.* to '%s'@'%%'", "user");
 		System.out.println(sqlGrantLoadCSV);
 	}
