@@ -722,12 +722,9 @@ public class DBSourceServiceProxyHelper {
 				 last_ping timestamp, status varchar(10), config_version varchar(100),
 				 primary key (instance_basename, instance_dbname))
 				 """;
-		String sqlGrantLoadCSV = String.format("grant file on *.* to '%s'@'%%'", params.getDbUsername());
 		try (Connection conn = adminBds.getConnection()) {
 			conn.prepareStatement(sqlCreateMetaSchema).executeQuery();
 			conn.prepareStatement(sqlCreateMetaTable).executeQuery();
-			logger.debug("Granting infile privileges: {}", sqlGrantLoadCSV);
-			conn.prepareStatement(sqlGrantLoadCSV).executeQuery();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			logger.error(e);
@@ -865,8 +862,7 @@ public class DBSourceServiceProxyHelper {
 				PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--")));
 		CsvWriter writer = CsvWriter.builder()
 				.quoteStrategy(QuoteStrategies.ALWAYS)
-				.quoteCharacter('"')
-				.fieldSeparator(';')
+				.fieldSeparator('|')
 				.build(file, StandardCharsets.UTF_8);
 		List<String> cols = item.getColumns();
 		writer.writeRecord(cols);
@@ -891,7 +887,7 @@ public class DBSourceServiceProxyHelper {
 
 		String sqlLoadData = String.format("""
 				load data infile '%s' into table %s
-				fields terminated by ';' enclosed by '\"' ignore 1 lines
+				fields terminated by '|' ignore 1 lines
 				(%s) set %s""", file.toAbsolutePath().toString(), getTempTableName(item.getTableName()),
 				String.join(", ", metaCols), String.join(", ", dataCols));
 		try (Connection conn = bds.getConnection()) {
@@ -902,9 +898,8 @@ public class DBSourceServiceProxyHelper {
 			logger.error("tempFile: {}, sqlLoadData: {} ", sqlLoadData);
 			throw e;
 		} finally {
-			// TODO dont delete file when exception
+			file.toFile().delete();
 		}
-		file.toFile().delete();
 	}
 
 	public static void main(String[] args) throws Exception {
